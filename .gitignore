@@ -5,6 +5,11 @@ __pycache__/
 
 # C extensions
 *.so
+.idea
+alembic
+alembic.ini
+docker-compose.yml
+Dockerfile
 
 # Distribution / packaging
 .Python
