@@ -6,15 +6,14 @@ from keyboards.inline import (
 )
 from keyboards.inline.Dictionary import faculty_file_map2
 from file_service import write_qabul, get_file_path
-from data.config import ADMINS, ADMIN_M1, ADMIN_M2
 from utils.db_api.core import DatabaseService
 from aiogram.dispatcher import FSMContext
 from states.button import Learning
+from data.config import ADMIN_M2
 from data.config import engine
 from aiogram import types
 from loader import dp
 import logging
-import re
 
 # Database service initialization
 db = DatabaseService(engine=engine)
@@ -116,14 +115,6 @@ async def region(call: types.CallbackQuery, state: FSMContext, raw_state: FSMCon
     await call.message.answer("Tumanlarni tanlang.", reply_markup=await inline_tumanlar(call.data))
 
 
-# @dp.callback_query_handler(lambda call: call.data in list_tuman)
-# @handle_errors
-# async def region(call: types.CallbackQuery, state: FSMContext, raw_state: FSMContext):
-#     await call.message.delete()
-#     await state.update_data({"tuman": call.data})
-#     await call.message.answer("Siz bilan bog'lanish uchun faol telefon raqamingizni kiriting.", reply_markup=keyboard)
-
-
 @dp.callback_query_handler(lambda call: call.data in list_tuman)
 @handle_errors
 async def region(call: types.CallbackQuery, state: FSMContext, raw_state: FSMContext):
@@ -151,9 +142,9 @@ async def answer_name(message: types.Message, state: FSMContext, raw_state: FSMC
 
     if message.text.startswith("/start"):
         await exit_system(message, state)
-    if not (message.text.isdigit() and len(message.text) == 13):
+    if not (message.text.isdigit() and len(message.text) == 14):
         await message.answer(
-            "❌ JSHIR noto'g'ri formatda kiritildi. U 13 xonali raqam bo'lishi kerak. Qaytadan urinib ko'ring!")
+            "❌ JSHIR noto'g'ri formatda kiritildi. U 14 xonali raqam bo'lishi kerak. Qaytadan urinib ko'ring!")
         await Learning.one.set()
     else:
         await state.update_data({"jshir": message.text})
@@ -222,7 +213,7 @@ async def check(call: types.CallbackQuery, state: FSMContext, raw_state: FSMCont
     data = await state.get_data()
 
     if call.data == "yes":
-        await call.message.answer("✅ Ma'lumotlaringiz muvaffaqiyatli qabul qilindi.\n")
+        await call.message.answer("✅ Ma'lumotlaringiz muvaffaqiyatli qabul qilindi.\n", reply_markup=choose_visitor)
         db.add_user(name=data.get('Name'), passport=data.get('passport'), viloyat=data.get('region'),
                     tuman=data.get('tuman'), faculty=faculty_file_map2.get(data.get('yonalish')),
                     talim_turi=data.get('education_status'), talim_tili=data.get('leanguage'),
@@ -231,12 +222,12 @@ async def check(call: types.CallbackQuery, state: FSMContext, raw_state: FSMCont
                            data.get('education_status'), data.get('passport'), data.get('jshir'), data.get('region'),
                            data.get('tuman'), db.get_by_telegram_id(str(call.from_user.id)).telegram_number])
         await dp.bot.send_message(ADMIN_M2, f"F. I. SH: <b>{data.get('Name')}</b>\n"
-                f"Passport: <b>{data.get('passport')}</b>\n"
-                f"JSHIR: <b>{data.get('jshir')}</b>\n"
-                f"Manzil: <b>{data.get('region')}</b> <b>{data.get('tuman')}</b>\n"
-                f"Yo'nalish: <b>{faculty_file_map2.get(data.get('yonalish'))}</b>\n"
-                f"Ta'lim shakli: <b>{data.get('education_status')}</b>\n"
-                f"Ta'lim tili: <b>{data.get('leanguage')}</b>")
+                                            f"Passport: <b>{data.get('passport')}</b>\n"
+                                            f"JSHIR: <b>{data.get('jshir')}</b>\n"
+                                            f"Manzil: <b>{data.get('region')}</b> <b>{data.get('tuman')}</b>\n"
+                                            f"Yo'nalish: <b>{faculty_file_map2.get(data.get('yonalish'))}</b>\n"
+                                            f"Ta'lim shakli: <b>{data.get('education_status')}</b>\n"
+                                            f"Ta'lim tili: <b>{data.get('leanguage')}</b>")
         await dp.bot.send_document(ADMIN_M2, types.InputFile(await get_file_path(name="qabul.xlsx")))
     else:
         await call.message.answer("Ma'lumotlaringiz qabul qilinmadi!.\n Xizmat turini tanlang",
