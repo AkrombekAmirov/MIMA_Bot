@@ -126,6 +126,17 @@ choose_education_status = InlineKeyboardMarkup(inline_keyboard=[
     ]
 ])
 
+choose_education_status_info = InlineKeyboardMarkup(inline_keyboard=[
+    [
+        InlineKeyboardButton(text="🎓 Kunduzgi ta'lim shakli", callback_data="Kunduzgi_info")
+    ],
+    [
+        InlineKeyboardButton(text="🕓 Sirtqi ta'lim shakli", callback_data="Sirtqi_info")
+    ],
+    [
+        InlineKeyboardButton(text="📄 Litsenziya bilan tanishish", callback_data="license_info")
+    ]
+])
 
 async def keyboard_func(user_id, message, faculty):
     choose_admin = InlineKeyboardMarkup(row_width=2)
