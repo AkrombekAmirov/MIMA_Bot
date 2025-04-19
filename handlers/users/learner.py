@@ -15,6 +15,7 @@ from keyboards.inline.Dictionary import faculty_file_map2
 from file_service import write_qabul, get_file_path
 from utils.db_api.core import DatabaseService
 from states.button import Learning
+from re import match
 
 # Logging config
 logging.basicConfig(
@@ -133,11 +134,22 @@ class BotHandler:
     @dp.message_handler(content_types=types.ContentType.TEXT, state=Learning.zero)
     @handle_errors
     async def process_name(message: types.Message, state: FSMContext):
+        full_name = message.text.strip()
+        # Faqat lotin harflari, bo'sh joy, apostrof va tire
+        if not match(r"^[A-Za-z\s'-]+$", full_name):
+            await message.answer("❌ Iltimos, faqat *lotin harflarida* familiya, ism va sharifingizni kiriting.")
+            await Learning.zero.set()
+            return
+        # Kamida ism va familiya (2 ta so'z) bo'lishi kerak
+        parts = full_name.split()
+        if len(parts) < 2:
+            await message.answer("❌ Iltimos, to‘liq familiya va ismingizni kiriting (kamida 2 ta so‘z).")
+            await Learning.zero.set()
+            return
         await state.update_data({"Name": message.text})
         await message.delete()
         await message.answer("🆔 JSHIR (14 xonali raqam) kiriting:")
         await Learning.next()
-
     @staticmethod
     @dp.message_handler(content_types=types.ContentType.TEXT, state=Learning.one)
     @handle_errors
@@ -175,7 +187,6 @@ class BotHandler:
                 return await state.reset_state(with_data=True)
 
             await state.update_data({"passport": passport})
-            await call.message.delete()
             info = (
                 f"Quyidagi ma'lumotlar to'g‘rimi?\n\n"
                 f"👤 F.I.SH: <b>{data.get('Name')}</b>\n"
