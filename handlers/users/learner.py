@@ -12,7 +12,7 @@ from keyboards.inline import (
     choose_education_status, choose_language
 )
 from keyboards.inline.Dictionary import faculty_file_map2
-from file_service import write_qabul, get_file_path
+from file_service import write_qabul, get_file_path, check_passport_exists
 from utils.db_api.core import DatabaseService
 from states.button import Learning
 from re import match
@@ -150,6 +150,7 @@ class BotHandler:
         await message.delete()
         await message.answer("🆔 JSHIR (14 xonali raqam) kiriting:")
         await Learning.next()
+
     @staticmethod
     @dp.message_handler(content_types=types.ContentType.TEXT, state=Learning.one)
     @handle_errors
@@ -184,6 +185,10 @@ class BotHandler:
             passport = f"{data.get('passport_seria')}{updated}"
             if db.get_by_passport_exists(passport):
                 await call.message.answer("❗ Bu passport bilan ro'yxatdan o'tilgan.", reply_markup=choose_visitor)
+                return await state.reset_state(with_data=True)
+            if await check_passport_exists(str(passport)):
+                await call.message.answer("❗ Akademiya talabalari uchun ro'yhatdan o'tish imkoniyati mavjud emas!",
+                                          reply_markup=choose_visitor)
                 return await state.reset_state(with_data=True)
 
             await state.update_data({"passport": passport})
