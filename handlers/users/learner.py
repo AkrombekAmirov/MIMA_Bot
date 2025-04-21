@@ -1,4 +1,5 @@
 import logging
+import re
 from functools import wraps
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -16,6 +17,7 @@ from file_service import write_qabul, get_file_path, check_passport_exists
 from utils.db_api.core import DatabaseService
 from states.button import Learning
 from re import match
+from datetime import datetime
 
 # Logging config
 logging.basicConfig(
@@ -59,7 +61,6 @@ class BotHandler:
         if message.content_type != types.ContentType.CONTACT:
             await message.answer("❗ Iltimos, tugma orqali kontakt yuboring.")
             return
-
         user_id = str(message.from_user.id)
         contact = message.contact
 
@@ -124,11 +125,26 @@ class BotHandler:
     @staticmethod
     @dp.callback_query_handler(lambda call: call.data in list_tuman)
     @handle_errors
-    async def district(call: types.CallbackQuery, state: FSMContext):
+    async def phone_numbers(call: types.CallbackQuery, state: FSMContext):
         await state.update_data({"tuman": call.data})
         await call.message.delete()
-        await call.message.answer("👤 Familiya, ism va sharifingizni kiriting:")
-        await Learning.zero.set()
+        await call.message.answer(
+            "📞 Iltimos, Siz bilan bog'lanish uchun qo‘shimcha telefon raqamingizni matn shaklida kiriting:")
+        await Learning.minus.set()
+
+    @staticmethod
+    @dp.message_handler(content_types=types.ContentType.TEXT, state=Learning.minus)
+    @handle_errors
+    async def district(message: types.Message, state: FSMContext):
+        if not re.match(r'^\+998\d{9}$', message.text.strip()):
+            await message.answer(
+                "❌ Telefon raqami noto‘g‘ri formatda.\nIltimos, quyidagi shaklda kiriting:\n\n`+998901234567`",
+                parse_mode="Markdown")
+            return
+        await state.update_data({"phone_numbers": message.text})
+        await message.delete()
+        await message.answer("👤 Familiya, ism va sharifingizni kiriting:")
+        await Learning.next()
 
     @staticmethod
     @dp.message_handler(content_types=types.ContentType.TEXT, state=Learning.zero)
@@ -195,6 +211,7 @@ class BotHandler:
             info = (
                 f"Quyidagi ma'lumotlar to'g‘rimi?\n\n"
                 f"👤 F.I.SH: <b>{data.get('Name')}</b>\n"
+                f"📞 Telefon raqami: <b>{data.get('phone_numbers')}</b>\n"
                 f"🆔 JSHIR: <b>{data.get('jshir')}</b>\n"
                 f"🛂 Passport: <b>{passport}</b>\n"
                 f"📍 Manzil: <b>{data.get('region')}</b>, {data.get('tuman')}\n"
@@ -205,10 +222,8 @@ class BotHandler:
             await call.message.answer(info, reply_markup=response_keyboard, parse_mode="HTML")
             await Learning.four.set()
         else:
-            await call.message.edit_text(
-                f"🔢 Raqam kiriting: {data.get('passport_seria')} {updated}",
-                reply_markup=number_keyboard
-            )
+            await call.message.edit_text(f"🔢 Raqam kiriting: {data.get('passport_seria')} {updated}",
+                                         reply_markup=number_keyboard)
 
     @staticmethod
     @dp.callback_query_handler(lambda call: call.data in ["yes", "no"], state=Learning.four)
@@ -237,10 +252,20 @@ class BotHandler:
                 data.get("jshir"),
                 data.get("region"),
                 data.get("tuman"),
-                db.get_by_telegram_id(str(call.from_user.id)).telegram_number
+                db.get_by_telegram_id(str(call.from_user.id)).telegram_number,
+                data.get("phone_numbers"),
+                datetime.now().strftime("%Y-%m-%d")
             ])
             await state.reset_state(with_data=True)
-            await dp.bot.send_message(ADMIN_M2, f"✅ Yangi ro'yxat: {data.get('Name')}")
+            await dp.bot.send_message(ADMIN_M2,
+                                      f"👤 F.I.SH: <b>{data.get('Name')}</b>\n"
+                                      f"📞 Telefon raqami: <b>{data.get('phone_numbers')}</b>\n"
+                                      f"🆔 JSHIR: <b>{data.get('jshir')}</b>\n"
+                                      f"🛂 Passport: <b>{data.get('passport')}</b>\n"
+                                      f"📍 Manzil: <b>{data.get('region')}</b>, {data.get('tuman')}\n"
+                                      f"📚 Yo'nalish: <b>{faculty_file_map2.get(data.get('yonalish'))}</b>\n"
+                                      f"🎓 Shakli: <b>{data.get('education_status')}</b>\n"
+                                      f"🌐 Tili: <b>{data.get('leanguage')}</b>")
             await dp.bot.send_document(ADMIN_M2, types.InputFile(await get_file_path(name="qabul.xlsx")))
             await call.message.answer("✅ Ma’lumotlar saqlandi!", reply_markup=choose_visitor)
         else:

@@ -2,6 +2,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 
 
 class Learning(StatesGroup):
+    minus = State()
     zero = State()
     one = State()
     two = State()
