@@ -1,10 +1,17 @@
+from file_service import write_qabul, get_file_path, check_passport_exists
+from keyboards.inline.Dictionary import faculty_file_map2
+from utils.db_api.core import DatabaseService
+from aiogram.dispatcher import FSMContext
+from data.config import ADMIN_M2, engine
+from states.button import Learning
+from datetime import datetime
+from functools import wraps
+from asyncio import sleep
+from aiogram import types
+from loader import dp
+from re import match
 import logging
 import re
-from functools import wraps
-from aiogram import types
-from aiogram.dispatcher import FSMContext
-from loader import dp
-from data.config import ADMIN_M2, engine
 from keyboards.inline import (
     keyboard, yonalish_nomi_keyboard, response_keyboard,
     uzbekistan_viloyatlar, choose_visitor,
@@ -12,12 +19,6 @@ from keyboards.inline import (
     list_tuman, list_region1, inline_tumanlar,
     choose_education_status, choose_language
 )
-from keyboards.inline.Dictionary import faculty_file_map2
-from file_service import write_qabul, get_file_path, check_passport_exists
-from utils.db_api.core import DatabaseService
-from states.button import Learning
-from re import match
-from datetime import datetime
 
 # Logging config
 logging.basicConfig(
@@ -86,7 +87,27 @@ class BotHandler:
         if not db.get_user_exists(user_id):
             await call.message.answer("📲 Iltimos, telegram kontaktangizni yuboring.", reply_markup=keyboard)
         else:
-            await call.message.delete()
+            await call.message.answer(
+                "❗ <b>Eslatma:</b>\n"
+                "Ro‘yxatdan o‘tish jarayonida sizdan bir necha bosqichda ma’lumot so‘raladi. "
+                "Agar biror bosqichda xatolik yuz bersa — xavotir olmang.\n\n"
+                "📌 So‘nggi bosqichda siz kiritgan barcha ma’lumotlarni ko‘rib chiqish va tasdiqlash imkoniyatingiz bo‘ladi. "
+                "Agar xato bo‘lsa, <b>“⬅️ Orqaga”</b> tugmasi orqali to‘g‘rilashingiz mumkin.\n\n"
+                "Iltimos, ma’lumotlarni diqqat bilan va <b>lotin harflarida</b> kiriting.",
+                parse_mode="HTML"
+            )
+
+            # 5 soniyalik sanash effekti
+            for i in range(10, 0, -1):
+                await sleep(1)
+                await call.message.edit_text(
+                    f"❗ Quyidagi ogohlantirishni o'qib chiqing...\n\n"
+                    f"⏳ Keyingi bosqich <b>{i}</b> soniyadan so‘ng boshlanadi.",
+                    parse_mode="HTML"
+                )
+
+            await call.message.edit_text("✅ Rahmat! Endi davom etamiz.", parse_mode="HTML")
+
             await call.message.answer("📚 O‘quv yo‘nalishini tanlang:", reply_markup=yonalish_nomi_keyboard)
 
     @staticmethod
@@ -140,6 +161,11 @@ class BotHandler:
             await message.answer(
                 "❌ Telefon raqami noto‘g‘ri formatda.\nIltimos, quyidagi shaklda kiriting:\n\n`+998901234567`",
                 parse_mode="Markdown")
+            await Learning.minus.set()
+            return
+        if message.text.strip() == "+998901234567":
+            await message.answer(f"❌ O'zingizga tegishli bo'lmagan telefon raqam kiritdingiz! Iltimos ozingizga tegishli telefon raqamni kiriting.",)
+            await Learning.minus.set()
             return
         await state.update_data({"phone_numbers": message.text})
         await message.delete()
@@ -210,7 +236,7 @@ class BotHandler:
             await state.update_data({"passport": passport})
             info = (
                 f"Quyidagi ma'lumotlar to'g‘rimi?\n\n"
-                f"👤 F.I.SH: <b>{data.get('Name')}</b>\n"
+                f"👤 F I SH: <b>{data.get('Name')}</b>\n"
                 f"📞 Telefon raqami: <b>{data.get('phone_numbers')}</b>\n"
                 f"🆔 JSHIR: <b>{data.get('jshir')}</b>\n"
                 f"🛂 Passport: <b>{passport}</b>\n"
@@ -270,4 +296,4 @@ class BotHandler:
             await call.message.answer("✅ Ma’lumotlar saqlandi!", reply_markup=choose_visitor)
         else:
             await state.reset_state(with_data=True)
-            await call.message.answer("❌ Ma'lumotlar bekor qilindi.", reply_markup=choose_visitor)
+            await call.message.answer("❌ Ma'lumotlar bekor qilindi.\nQaytadan urinib ko'ring", reply_markup=choose_visitor)

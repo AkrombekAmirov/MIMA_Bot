@@ -25,7 +25,7 @@ async def education_status_info(call: types.CallbackQuery, state: FSMContext):
             "6. 📈 <b>Menejment</b> — <b>20 mln so'm</b>\n"
             "7. ⚖️ <b>Yurisprudensiya</b> — <b>30 mln so'm</b>\n"
             "8. 📊 <b>Bugalteriya hisobi</b> — <b>20 mln so'm</b>\n"
-            "9. 🧪 <b>Metrologiya va standartlashtirish</b> — <b>17 mln so'm</b>\n\n"
+            "9. 🧪 <b>Metrologiya va standartlashtirish</b> — <b>14 mln so'm</b>\n\n"
             "⏰ <b>O'qish davomiyligi:</b> 4️⃣ yil\n"
             "📌 <b>Izoh:</b> Barcha narxlar yillik to'lov miqdorini o'z ichiga oladi."
         )
@@ -41,7 +41,7 @@ async def education_status_info(call: types.CallbackQuery, state: FSMContext):
             "6. 📈 <b>Menejment</b> — <b>18 mln so'm</b>\n"
             "7. ⚖️ <b>Yurisprudensiya</b> — <b>27 mln so'm</b>\n"
             "8. 📊 <b>Bugalteriya hisobi</b> — <b>18 mln so'm</b>\n"
-            "9. 🧪 <b>Metrologiya va standartlashtirish</b> — <b>15 mln so'm</b>\n\n"
+            "9. 🧪 <b>Metrologiya va standartlashtirish</b> — <b>13 mln so'm</b>\n\n"
             "⏰ <b>O'qish davomiyligi:</b> 5️⃣ yil\n"
             "📌 <b>Izoh:</b> Barcha narxlar yillik to'lov miqdorini o'z ichiga oladi."
         )

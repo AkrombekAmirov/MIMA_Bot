@@ -48,35 +48,35 @@ choose_visitor = InlineKeyboardMarkup(inline_keyboard=[
 yonalish_nomi_keyboard = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text='Mehnat muhofazasi va texnika xavfsizligi',
+            InlineKeyboardButton(text='🦺 Mehnat muhofazasi va texnika xavfsizligi',
                                  callback_data="faculty0"),
         ],
         [
-            InlineKeyboardButton(text="Hayot faoliyati xavfsizligi",
+            InlineKeyboardButton(text="🚨 Hayot faoliyati xavfsizligi",
                                  callback_data="faculty1"),
         ],
         [
-            InlineKeyboardButton(text="Inson resurslarini boshqarish", callback_data="faculty2"),
+            InlineKeyboardButton(text="👥 Inson resurslarini boshqarish", callback_data="faculty2"),
         ],
         [
-            InlineKeyboardButton(text="Ijtimoiy ish", callback_data="faculty3"),
+            InlineKeyboardButton(text="🤝 Ijtimoiy ish", callback_data="faculty3"),
         ],
         [
-            InlineKeyboardButton(text="Psixologiya", callback_data="faculty4"),
+            InlineKeyboardButton(text="🧠 Psixologiya", callback_data="faculty4"),
         ],
         [
-            InlineKeyboardButton(text="Menejment",
+            InlineKeyboardButton(text="📊 Menejment",
                                  callback_data="faculty5"),
         ],
         [
-            InlineKeyboardButton(text="Yurisprudensiya", callback_data="faculty6"),
+            InlineKeyboardButton(text="⚖️ Yurisprudensiya", callback_data="faculty6"),
         ],
         [
-            InlineKeyboardButton(text="Bugalteriya hisobi",
+            InlineKeyboardButton(text="📚 Bugalteriya hisobi",
                                  callback_data="faculty7"),
         ],
         [
-            InlineKeyboardButton(text="Metrologiya va standartlashtirish", callback_data="faculty8"),
+            InlineKeyboardButton(text="📏 Metrologiya va standartlashtirish", callback_data="faculty8"),
         ]
 
     ])
@@ -86,7 +86,7 @@ response_keyboard = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text="✅ XA", callback_data="yes"),
     ],
     [
-        InlineKeyboardButton(text="❌ YO'Q", callback_data="no"),
+        InlineKeyboardButton(text="❌ Orqaga", callback_data="no"),
     ]
 ])
 
@@ -117,14 +117,14 @@ choose_language = InlineKeyboardMarkup(inline_keyboard=[
     ]
 ])
 
-choose_education_status = InlineKeyboardMarkup(inline_keyboard=[
-    [
-        InlineKeyboardButton(text="Kunduzgi ta'lim shakli", callback_data="Kunduzgi")
-    ],
-    [
-        InlineKeyboardButton(text="Sirtqi ta'lim shakli", callback_data="Sirtqi")
+choose_education_status = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Kunduzgi ta'lim", callback_data="Kunduzgi"),
+            InlineKeyboardButton(text="📘 Sirtqi ta'lim", callback_data="Sirtqi")
+        ]
     ]
-])
+)
 
 choose_education_status_info = InlineKeyboardMarkup(inline_keyboard=[
     [
