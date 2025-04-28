@@ -37,8 +37,8 @@ class User(SQLModel, table=True):
     talim_turi: str = Field(default="", max_length=50)
     talim_tili: str = Field(default="", max_length=50)
     jshir_id: str = Field(default="", max_length=13, nullable=True)
-    test_point: str = Field(default="", max_length=3)
-    status: bool = Field(default=False, description="Abituryent holati")
+    test_point: str = Field(default="", max_length=3, nullable=True)
+    status: bool = Field(default=False, description="Abituryent holati", nullable=True)
 
     created_date: str
     created_time: str
