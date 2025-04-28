@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Column, TEXT, BigInteger
+from sqlmodel import SQLModel, Field, Column, TEXT, Relationship
 from typing import Optional, Dict, List
 from datetime import datetime
 from json import loads, dumps
@@ -7,8 +7,10 @@ from pytz import timezone
 
 class BaseModel(SQLModel):
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_date: str = Field(default_factory=lambda: datetime.now(timezone('Asia/Tashkent')).strftime("%d:%m:%y"), description="Yaratilgan vaqt")
-    created_time: str = Field(default_factory=lambda: datetime.now(timezone('Asia/Tashkent')).strftime("%H:%M:%S"), description="Yaratilgan vaqt")
+    created_date: str = Field(default_factory=lambda: datetime.now(timezone('Asia/Tashkent')).strftime("%d:%m:%y"),
+                              description="Yaratilgan vaqt")
+    created_time: str = Field(default_factory=lambda: datetime.now(timezone('Asia/Tashkent')).strftime("%H:%M:%S"),
+                              description="Yaratilgan vaqt")
     updated_date: Optional[str] = Field(default=None, description="Yangilangan sana")
     updated_time: Optional[str] = Field(default=None, description="Yangilangan vaqt")
 
@@ -35,6 +37,8 @@ class User(SQLModel, table=True):
     talim_turi: str = Field(default="", max_length=50)
     talim_tili: str = Field(default="", max_length=50)
     jshir_id: str = Field(default="", max_length=13, nullable=True)
+    test_point: str = Field(default="", max_length=3)
+    status: bool = Field(default=False, description="Abituryent holati")
 
     created_date: str
     created_time: str
@@ -53,6 +57,26 @@ class Subject(BaseModel, table=True):
     subject_val: str = Field(..., description="Fan qiymati")
 
 
+class Faculty(BaseModel, table=True):
+    __tablename__ = 'faculties'
+    name: str = Field(..., description="Fakultet nomi")
+    faculty_val: str = Field(..., description="Fakultet qiymati")
+
+    blocks: List["FacultyBlock"] = Relationship(back_populates="faculty")
+
+
+class FacultyBlock(SQLModel, table=True):
+    __tablename__ = 'faculty_blocks'
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    faculty_id: int = Field(foreign_key="faculties.id")
+    subject_id: int = Field(foreign_key="subjects.id")
+    block_number: int = Field(..., description="Blok raqami: 1, 2 yoki 3")
+
+    faculty: Faculty = Relationship(back_populates="blocks")
+    subject: Subject = Relationship()
+
+
 class Question(BaseModel, table=True):
     __tablename__ = 'questions'
     subject_id: int = Field(..., description="Fan ID")
@@ -69,7 +93,7 @@ class Question(BaseModel, table=True):
 
 class Result(BaseModel, table=True):
     __tablename__ = 'results'
-    user_id: int = Field(..., sa_column=Column(BigInteger), description="Foydalanuvchi ID")
+    user_id: str = Field(sa_column=Column(TEXT), description="Foydalanuvchi ID")
     subject_id: int = Field(..., description="Fan ID")
     question_ids: str = Field(sa_column=Column(TEXT), description="Savol ID larining ro'yxati JSON formatida")
     user_answers: str = Field(sa_column=Column(TEXT), description="Foydalanuvchi javoblari JSON formatida")

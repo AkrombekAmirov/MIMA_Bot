@@ -1,8 +1,9 @@
 from file_service import write_qabul, get_file_path, check_passport_exists
 from keyboards.inline.Dictionary import faculty_file_map2
-from utils.db_api.core import DatabaseService
+from utils.db_api.core import DatabaseService1, User
+from data.config import ADMIN_M2, DATABASE_URL
 from aiogram.dispatcher import FSMContext
-from data.config import ADMIN_M2, engine
+from LoggingService import LoggerService
 from states.button import Learning
 from datetime import datetime
 from functools import wraps
@@ -28,7 +29,8 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-db = DatabaseService(engine=engine)
+# logger = LoggerService().get_logger()
+db = DatabaseService1(logger=LoggerService())
 
 
 def handle_errors(func):
@@ -64,15 +66,14 @@ class BotHandler:
             return
         user_id = str(message.from_user.id)
         contact = message.contact
-
-        if db.get_user_exists(user_id):
+        if await db.get(User, filters={'telegram_id': user_id}):
             await message.answer("✅ Siz ro'yxatdan o'tgansiz. Xizmat turini tanlang:", reply_markup=choose_visitor)
         elif contact.user_id == message.from_user.id:
-            db.add_user(
+            await db.add(User(
                 telegram_id=user_id,
                 username=message.from_user.username or "",
                 telegram_name=message.from_user.full_name,
-                telegram_number=contact.phone_number
+                telegram_number=contact.phone_number)
             )
             await state.update_data({"telegram_number": contact.phone_number})
             await message.answer("Xizmat turini tanlang:", reply_markup=choose_visitor)
@@ -83,8 +84,7 @@ class BotHandler:
     @dp.callback_query_handler(text="registration")
     @handle_errors
     async def registration(call: types.CallbackQuery, state: FSMContext):
-        user_id = str(call.from_user.id)
-        if not db.get_user_exists(user_id):
+        if not await db.get(User, filters={"telegram_id": str(call.from_user.id)}):
             await call.message.answer("📲 Iltimos, telegram kontaktangizni yuboring.", reply_markup=keyboard)
         else:
             await call.message.answer(
@@ -225,7 +225,7 @@ class BotHandler:
 
         if len(updated) == 7:
             passport = f"{data.get('passport_seria')}{updated}"
-            if db.get_by_passport_exists(passport):
+            if await db.get(User, filters={"passport": passport}):
                 await call.message.answer("❗ Bu passport bilan ro'yxatdan o'tilgan.", reply_markup=choose_visitor)
                 return await state.reset_state(with_data=True)
             if await check_passport_exists(str(passport)):
@@ -256,19 +256,21 @@ class BotHandler:
     @handle_errors
     async def confirm_data(call: types.CallbackQuery, state: FSMContext):
         data = await state.get_data()
-
+        print((await db.get(User, filters={'telegram_id': str(call.from_user.id)}))[0].telegram_number)
         if call.data == "yes":
-            db.add_user(
-                name=data.get("Name"),
-                passport=data.get("passport"),
-                viloyat=data.get("region"),
-                tuman=data.get("tuman"),
-                faculty=faculty_file_map2.get(data.get("yonalish")),
-                talim_turi=data.get("education_status"),
-                talim_tili=data.get("leanguage"),
-                telegram_id=str(call.from_user.id),
-                jshir_id=data.get("jshir")
-            )
+            # user: User = await db.get(User, filters={'telegram_id': str(call.from_user.id)})
+            updates = {
+                "name": data.get("Name"),
+                "passport": data.get("passport"),
+                "viloyat": data.get("region"),
+                "tuman": data.get("tuman"),
+                "faculty": faculty_file_map2.get(data.get("yonalish")),
+                "talim_turi": data.get("education_status"),
+                "talim_tili": data.get("leanguage"),
+                "jshir_id": data.get("jshir"),
+                "phone_number": data.get("phone_numbers"),
+            }
+            await db.update_user_by_telegram_id(telegram_id=str(call.from_user.id), updates=updates)
             await write_qabul([
                 data.get("Name"),
                 faculty_file_map2.get(data.get("yonalish")),
@@ -278,7 +280,7 @@ class BotHandler:
                 data.get("jshir"),
                 data.get("region"),
                 data.get("tuman"),
-                db.get_by_telegram_id(str(call.from_user.id)).telegram_number,
+                (await db.get(User, filters={'telegram_id': str(call.from_user.id)}))[0].telegram_number,
                 data.get("phone_numbers"),
                 datetime.now().strftime("%Y-%m-%d")
             ])

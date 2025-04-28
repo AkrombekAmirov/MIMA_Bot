@@ -56,3 +56,5 @@ yarl==1.9.4
 zipp==3.15.0
 aiofiles~=24.1.0
 setuptools~=75.1.0
+tenacity==9.1.2
+asyncpg==0.30.0
