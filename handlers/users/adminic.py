@@ -6,7 +6,7 @@ from aiogram import types
 from aiogram.dispatcher import FSMContext
 from loader import dp, bot
 from data.config import engine, ADMIN_M1, ADMINS
-from utils.db_api.core import DatabaseService
+from utils.db_api.core import DatabaseService1
 from keyboards.inline.keyboards_inline import choose_visitor
 from keyboards.inline.Dictionary import faculty_file_map1
 from states.button import Form
@@ -16,7 +16,7 @@ import aiofiles
 logging.basicConfig(filename='bot.log', filemode='w', level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-db = DatabaseService(engine=engine)
+db = DatabaseService1
 
 
 async def send_error_message(admin_ids, message):

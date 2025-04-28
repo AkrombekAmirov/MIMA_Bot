@@ -13,12 +13,12 @@ class LoggerService:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self, log_dir="LoggerService", log_file="app.log", log_level=INFO, max_bytes=1000000, backup_count=5, log_format=None):
+    def __init__(self, log_dir="LoggingService", log_file="app.log", log_level=INFO, max_bytes=1000000, backup_count=5, log_format=None):
         """Logger xizmati uchun sozlamalar."""
         if hasattr(self, 'logger'):
             return  # Logni faqat bir marta sozlash uchun
         log_file_path = join(log_dir, log_file)
-        self.logger = getLogger("TelegramBotLogger")
+        self.logger = getLogger("TestLogger")
         self.logger.setLevel(log_level)
 
         # Log formatini sozlash
