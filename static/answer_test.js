@@ -3,13 +3,18 @@ const USER_ID = parseInt(document.getElementById('user-id').value);
 const container = document.getElementById("questions-container");
 const navButtons = document.getElementById("nav-buttons");
 const finishBtn = document.getElementById("finish-test-btn");
+const progressBar = document.getElementById("progress-bar");
+const timeRemaining = document.getElementById("time-remaining");
 
 let subjectId = null;
 let blockNumber = null;
 let selectedAnswers = {};
+let countdownInterval;
+let totalSeconds;
 
 async function fetchQuestions() {
   try {
+    clearInterval(countdownInterval);
     container.innerHTML = "";
     navButtons.innerHTML = "";
 
@@ -83,10 +88,37 @@ async function fetchQuestions() {
       };
       navButtons.appendChild(navBtn);
     });
+
+    totalSeconds = blockNumber === 1 ? 3600 : 1800;
+    startCountdown();
   } catch (err) {
     console.error("Xatolik:", err);
     Swal.fire("Xatolik", "Savollarni yuklashda muammo yuz berdi", "error");
   }
+}
+
+function startCountdown() {
+  updateProgressBar();
+  countdownInterval = setInterval(() => {
+    totalSeconds--;
+    updateProgressBar();
+
+    if (totalSeconds <= 0) {
+      clearInterval(countdownInterval);
+      Swal.fire("⏳ Taymer tugadi!", "Blok avtomatik yakunlanmoqda...", "info");
+      finishBtn.click();
+    }
+  }, 1000);
+}
+
+function updateProgressBar() {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  timeRemaining.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+  const initial = blockNumber === 1 ? 3600 : 1800;
+  const percent = ((initial - totalSeconds) / initial) * 100;
+  progressBar.style.width = `${100 - percent}%`; // Left-to-right kamayish
 }
 
 finishBtn.addEventListener("click", async () => {
@@ -95,25 +127,28 @@ finishBtn.addEventListener("click", async () => {
     return;
   }
 
+  const spentMinutes = Math.floor((blockNumber === 1 ? 3600 : 1800 - totalSeconds) / 60);
+
   const res = await fetch(`/user/api/finish-block`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: USER_ID, subject_id: subjectId })
+    body: JSON.stringify({
+      user_id: USER_ID,
+      subject_id: subjectId,
+      spent_time: spentMinutes
+    })
   });
 
   const data = await res.json();
-
   if (res.ok) {
     if (blockNumber === 3) {
-      const summaryUrl = `/user/api/final-summary?user_id=${USER_ID}&summary=${data.total_questions}|${data.correct_answers}|${data.accuracy}|${data.status}`;
-      window.location.href = summaryUrl;
+      window.location.href = `/final-summary?user_id=${USER_ID}`;
     } else {
-      await fetchQuestions(); // keyingi blokka o'tish
+      await fetchQuestions();
     }
   } else {
     Swal.fire("Xatolik", data.detail || "Yakunlashda xatolik", "error");
   }
 });
 
-// Boshlanishda birinchi blokni chaqirish
 fetchQuestions();

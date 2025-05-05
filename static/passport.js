@@ -18,9 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
     try {
       const response = await fetch(`/user/api/check-passport/?passport=${passport}`, {
         method: "GET",
-        headers: {
-          "Content-Type": "application/json"
-        }
+        headers: { "Content-Type": "application/json" }
       });
 
       const result = await response.json();
@@ -28,15 +26,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (response.ok && Array.isArray(result) && result.length > 0 && result[0].id) {
         const user = result[0];
-        console.log("✅ Foydalanuvchi topildi:", user);
 
-        showAlert("Muvaffaqiyatli!", `Xush kelibsiz, ${user.name}!`, "success");
-        setTimeout(() => {
-          window.location.href = `/start-test/${user.id}`;
-        }, 1500);
+        if (user.status) {
+          showAlert("❗ Test topshirilgan", "Siz ushbu testni avval yakunlagansiz. Bosh sahifaga qaytishingiz mumkin.", "warning");
+          setTimeout(() => {
+            window.location.href = "/";
+          }, 2500);
+        } else {
+          showAlert("Muvaffaqiyatli!", `Xush kelibsiz, ${user.name}!`, "success");
+          setTimeout(() => {
+            window.location.href = `/start-test/${user.id}`;
+          }, 1500);
+        }
+
       } else {
-        showAlert("Xatolik", result.detail || "Foydalanuvchi topilmadi yoki ID aniqlanmadi", "error");
-        console.warn("⚠️ No valid user:", result);
+        showAlert("Xatolik", result.detail || "Foydalanuvchi topilmadi", "error");
       }
     } catch (error) {
       spinner.classList.add('hidden');

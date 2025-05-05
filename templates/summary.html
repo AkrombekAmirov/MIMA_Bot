@@ -1,8 +1,8 @@
-<!-- summary.html -->
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Test Natijalari</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -10,11 +10,25 @@
     const USER_ID = parseInt(new URLSearchParams(window.location.search).get("user_id"));
   </script>
 </head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg">
-    <h1 class="text-3xl font-bold text-center text-green-700 mb-6">Test Yakuniy Natijalari</h1>
-    <div id="summary-results" class="space-y-4"></div>
+<body class="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen py-12 px-4">
+
+  <div class="max-w-6xl mx-auto bg-white p-8 rounded-3xl shadow-2xl">
+    <h1 class="text-4xl font-bold text-center text-indigo-700 mb-12">📊 Yakuniy Test Natijalari</h1>
+
+    <div id="summary-results" class="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+
+    <div class="mt-12 text-center border-t pt-6">
+      <h2 class="text-2xl font-semibold text-gray-700">🏁 Umumiy Ball</h2>
+      <p id="total-score" class="text-4xl text-green-700 font-extrabold mt-2"></p>
+    </div>
+
+    <div class="mt-8 text-center">
+      <a href="/" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl text-lg font-semibold transition">
+        🔄 Bosh sahifaga qaytish
+      </a>
+    </div>
   </div>
+
   <script src="/static/summary.js"></script>
 </body>
 </html>

@@ -7,4 +7,5 @@ class UserPassportResponse(BaseModel):
     faculty: str
     telegram_id: str
     passport: str
+    status: bool
 

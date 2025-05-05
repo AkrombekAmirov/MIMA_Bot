@@ -21,7 +21,6 @@ router = APIRouter(
 @router.get("/check-passport/", response_model=List[UserPassportResponse])
 async def check_passport(passport: str, db: DatabaseService1 = Depends(get_db_core)):
     try:
-
         users = await db.get(User, filters={"passport": passport})
 
         if not users:
@@ -29,18 +28,19 @@ async def check_passport(passport: str, db: DatabaseService1 = Depends(get_db_co
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Foydalanuvchi topilmadi. Iltimos, passport ma'lumotlarini tekshirib qayta urinib ko'ring."
             )
-        response = [
+        await db.update_by_field(User, "id", users[0].id, {"test_point": "1"})
+
+        return [
             UserPassportResponse(
                 id=user.id,
                 name=user.name,
                 faculty=user.faculty,
                 telegram_id=user.telegram_id,
-                passport=user.passport
+                passport=user.passport,
+                status=user.status  # ✅ test topshirganmi — frontend tekshiradi
             )
             for user in users
         ]
-
-        return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -279,6 +279,7 @@ async def submit_answer(data: Dict[str, Any], db: DatabaseService1 = Depends(get
 async def finish_block(payload: dict, db: DatabaseService1 = Depends(get_db_core)):
     user_id = payload.get("user_id")
     subject_id = payload.get("subject_id")
+    spent_time = payload.get("spent_time")  # daqiqalarda
 
     results = await db.get(Result, filters={"user_id": str(user_id), "subject_id": subject_id, "status": False})
     if not results:
@@ -286,17 +287,21 @@ async def finish_block(payload: dict, db: DatabaseService1 = Depends(get_db_core
 
     result = results[0]
     result.status = True
+    result.updated_date = datetime.now(timezone("Asia/Tashkent")).strftime("%Y-%m-%d")
+    result.updated_time = datetime.now(timezone("Asia/Tashkent")).strftime("%H:%M:%S")
+
+    if spent_time:
+        result.number = spent_time  # daqiqalarda ishlagan vaqt (shu maydonni ishlatyapmiz)
+
     await db.update(result)
 
     total = len(loads(result.question_ids))
     correct = result.correct_answers
     accuracy = correct / total * 100 if total > 0 else 0
 
-    # ✅ test_point ni keyingisiga oshiramiz
     user = (await db.get(User, filters={"id": user_id}))[0]
     current_tp = int(user.test_point or "1")
-    new_tp = str(current_tp + 1)
-    await db.update_by_field(User, "id", user.id, {"test_point": new_tp})
+    await db.update_by_field(User, "id", user.id, {"test_point": str(current_tp + 1)})
 
     return {
         "message": "Blok yakunlandi",
@@ -307,43 +312,83 @@ async def finish_block(payload: dict, db: DatabaseService1 = Depends(get_db_core
     }
 
 
-@router.get("/final-summary/{user_id}")
+@router.get("/final-summary")
 async def get_final_summary(user_id: int, db: DatabaseService1 = Depends(get_db_core)):
-    user = await db.get(User, filters={"id": user_id})
-    if not user:
+    # 1. Foydalanuvchini tekshiramiz
+    users = await db.get(User, filters={"id": user_id})
+    if not users:
         raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
+    await db.update_by_field(User, "id", user_id, {"status": True})
+    user = users[0]
 
-    user = user[0]
+    # 2. Fakultet va bloklar
+    faculties = await db.get(Faculty, filters={"name": user.faculty})
+    if not faculties:
+        raise HTTPException(status_code=404, detail="Fakultet topilmadi")
+    faculty = faculties[0]
+
+    blocks = await db.get(FacultyBlock, filters={"faculty_val": faculty.faculty_val})
+    block_map = {int(b.subject_val): b.block_number for b in blocks}
+
+    # 3. Subject nomlari
+    subjects = await db.get(Subject)
+    subject_map = {int(s.subject_val): s.name for s in subjects}
+
+    # 4. Resultlarni yig‘ish
     results = await db.get(Result, filters={"user_id": str(user_id)})
     if not results:
         raise HTTPException(status_code=404, detail="Natijalar topilmadi")
 
-    faculties = await db.get(Faculty, filters={"name": user.faculty})
-    if not faculties:
-        raise HTTPException(status_code=404, detail="Fakultet topilmadi")
-
-    faculty = faculties[0]
-    blocks = await db.get(FacultyBlock, filters={"faculty_val": faculty.faculty_val})
-
-    block_map = {b.subject_val: b.block_number for b in blocks}
-    block_results = {1: {"correct": 0, "total": 0}, 2: {"correct": 0, "total": 0}, 3: {"correct": 0, "total": 0}}
+    # 5. Bloklar bo‘yicha statistikani tayyorlaymiz
+    block_results = {
+        1: {
+            "block_number": 1,
+            "subject_name": None,
+            "correct_answers": 0,
+            "wrong_answers": 0,
+            "total_questions": 30,
+            "score": 0,
+            "max_score": 60
+        },
+        2: {
+            "block_number": 2,
+            "subject_name": None,
+            "correct_answers": 0,
+            "wrong_answers": 0,
+            "total_questions": 10,
+            "score": 0,
+            "max_score": 20
+        },
+        3: {
+            "block_number": 3,
+            "subject_name": None,
+            "correct_answers": 0,
+            "wrong_answers": 0,
+            "total_questions": 10,
+            "score": 0,
+            "max_score": 20
+        }
+    }
 
     for res in results:
-        subject_id = res.subject_id
-        block_number = block_map.get(int(subject_id))
-        if not block_number:
+        sid = res.subject_id
+        block_number = block_map.get(sid)
+        if block_number not in block_results:
             continue
 
         correct = res.correct_answers
-        total = len(loads(res.question_ids))
+        wrong = res.wrong_answers
+        subject_name = subject_map.get(sid, "Noma'lum fan")
 
-        block_results[block_number]["correct"] += correct
-        block_results[block_number]["total"] += total
+        block = block_results[block_number]
+        block["correct_answers"] += correct
+        block["wrong_answers"] += wrong
+        block["subject_name"] = subject_name
+        block["score"] = round((correct / block["total_questions"]) * block["max_score"], 2)
+
+    total_score = sum(b["score"] for b in block_results.values())
 
     return {
-        "block1": block_results[1],
-        "block2": block_results[2],
-        "block3": block_results[3],
-        "total_correct": sum(b["correct"] for b in block_results.values()),
-        "total_questions": sum(b["total"] for b in block_results.values())
+        "blocks": [block_results[1], block_results[2], block_results[3]],
+        "total_score": total_score
     }
