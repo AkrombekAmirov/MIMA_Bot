@@ -9,38 +9,44 @@ app.include_router(router=router)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+
 @app.get("/")
 async def read_root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
-@app.get("/courses")
-async def read_courses_page(request: Request):
-    return templates.TemplateResponse("courses.html", {"request": request})
+@app.get("/start-test/{user_id}")
+async def read_test_page(request: Request, user_id: int):
+    return templates.TemplateResponse("start_test.html", {
+        "request": request,
+        "user_id": user_id
+    })
 
 
-@app.get("/groups")
-async def read_groups_page(request: Request):
-    return templates.TemplateResponse("groups.html", {"request": request})
+@app.get("/start-real-test/{user_id}")
+async def read_test_page(request: Request, user_id: int):
+    return templates.TemplateResponse("answer_test.html", {
+        "request": request,
+        "user_id": user_id
+    })
 
+@app.post("/answer-test/{user_id}")
+async def read_test_page(request: Request, user_id: int):
+    return templates.TemplateResponse("answer_test.html", {
+        "request": request,
+        "user_id": user_id
+    })
 
-@app.get("/teachers")
-async def read_teachers_page(request: Request):
-    return templates.TemplateResponse("teachers.html", {"request": request})
+@app.post("/finish-block/{user_id}")
+async def finish_test(request: Request, user_id:int):
+    return templates.TemplateResponse("finish_test.html", {
+        "request": request,
+        "user_id": user_id
+    })
 
-@app.get("/subjects")
-async def read_subjects_page(request: Request):
-    return templates.TemplateResponse("subjects.html", {"request": request})
-
-@app.get("/rooms")
-async def read_rooms_page(request: Request):
-    return templates.TemplateResponse("rooms.html", {"request": request})
-
-@app.get("/timetable")
-async def read_timetable_page(request: Request):
-    return templates.TemplateResponse("tajriba1.html", {"request": request})
-# Add similar CRUD operations for Group, Teacher, Room, ClassSchedule, Week, and Timetable
-
-@app.get("/teachers_timetable")
-async def read_teachers_timetable_page(request: Request):
-    return templates.TemplateResponse("teachersA.html", {"request": request})
+@app.get("/final-summary")
+async def read_test_page(request: Request, user_id: int):
+    return templates.TemplateResponse("summary.html", {
+        "request": request,
+        "user_id": user_id
+    })

@@ -138,6 +138,7 @@ choose_education_status_info = InlineKeyboardMarkup(inline_keyboard=[
     ]
 ])
 
+
 async def keyboard_func(user_id, message, faculty):
     choose_admin = InlineKeyboardMarkup(row_width=2)
     approve_btn = InlineKeyboardButton("✅ Tasdiqlash",
@@ -156,9 +157,25 @@ response_admin = InlineKeyboardMarkup(inline_keyboard=[
     ]
 ])
 
+subject_ = InlineKeyboardMarkup(inline_keyboard=[
+    [
+        InlineKeyboardButton(text="1. Huquqshunoslik", callback_data='info_law_1')
+    ],
+    [
+        InlineKeyboardButton(text="2. Ona tili", callback_data='info_law_2')
+    ],
+    [
+        InlineKeyboardButton(text="3. Ingliz tili", callback_data='info_law_3')
+    ],
+    [
+        InlineKeyboardButton(text="4. Inson resurslarini boshqarish", callback_data='info_law_4')
+    ]
+])
+
 choose_admin_1 = InlineKeyboardMarkup(inline_keyboard=[
     [
-        InlineKeyboardButton(text="❌ O'CHIRISH", callback_data="delete_no_admin"),
+        # InlineKeyboardButton(text="❌ O'CHIRISH", callback_data="delete_no_admin"),
+        InlineKeyboardButton(text="✅ Test kiritish", callback_data="test_enter_admin")
     ]
 ])
 

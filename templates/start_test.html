@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>Testni boshlash</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>const USER_ID = {{ user_id }};</script>
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #c3ecf5, #eff1f3);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      animation: fadeInUp 0.7s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .highlight {
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        color: #4f46e5;
+      }
+      50% {
+        color: #10b981;
+      }
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-6">
+
+  <!-- Spinner -->
+  <div id="spinner" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+  </div>
+
+  <!-- Glass Card -->
+  <div class="glass-card p-10 rounded-3xl w-full max-w-3xl text-center space-y-8">
+
+    <!-- Header -->
+    <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800">
+      👋 Xush kelibsiz, <span id="user-name" class="highlight font-black"></span>!
+    </h1>
+
+    <!-- Description -->
+    <p class="text-lg md:text-xl text-gray-700" id="faculty-info"></p>
+
+    <!-- Subject list -->
+    <div class="bg-white bg-opacity-90 rounded-xl p-6 shadow-inner border border-gray-200 text-left">
+      <ul class="space-y-3 text-lg md:text-xl text-gray-800" id="subject-list"></ul>
+    </div>
+
+    <!-- Button -->
+    <button id="start-test-btn"
+      class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-lg md:text-xl font-bold py-3 rounded-xl shadow-md transition transform hover:scale-105 duration-300">
+      🚀 Imtihonni boshlash
+    </button>
+
+  </div>
+
+  <script src="/static/start_test.js"></script>
+</body>
+</html>

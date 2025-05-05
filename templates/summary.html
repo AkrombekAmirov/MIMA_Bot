@@ -1,0 +1,20 @@
+<!-- summary.html -->
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Natijalari</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    const USER_ID = parseInt(new URLSearchParams(window.location.search).get("user_id"));
+  </script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+    <h1 class="text-3xl font-bold text-center text-green-700 mb-6">Test Yakuniy Natijalari</h1>
+    <div id="summary-results" class="space-y-4"></div>
+  </div>
+  <script src="/static/summary.js"></script>
+</body>
+</html>

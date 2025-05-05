@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Savollari</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .active-btn {
+      background-color: #34d399 !important;
+      color: white !important;
+      font-weight: bold;
+    }
+    .option-btn.active {
+      background-color: #bfdbfe;
+      font-weight: 600;
+    }
+    .sticky-nav {
+      position: sticky;
+      top: 20px;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-6">
+
+  <input type="hidden" id="user-id" value="{{ user_id }}" />
+
+  <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6">
+
+    <!-- Navigatsiya -->
+    <div class="md:col-span-1">
+      <div class="bg-white p-4 shadow rounded sticky-nav">
+        <h2 class="text-xl font-bold mb-4">Savollar</h2>
+        <div id="nav-buttons" class="grid grid-cols-5 gap-2 text-center"></div>
+        <button id="finish-test-btn"
+          class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded shadow">
+          Imtihonni yakunlash
+        </button>
+      </div>
+    </div>
+
+    <!-- Savollar -->
+    <div class="md:col-span-3">
+      <div class="bg-white p-6 shadow rounded space-y-8" id="questions-container">
+        <!-- JavaScript orqali to‘ldiriladi -->
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/answer_test.js"></script>
+</body>
+</html>

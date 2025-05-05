@@ -1,9 +1,11 @@
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
+from .models import User, Subject, Result, Question, Faculty, FacultyBlock, UserAnswer
+from sqlalchemy.exc import DBAPIError, OperationalError, InterfaceError
+from typing import Optional, List, Type, Dict, Any, Callable, Coroutine
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from tenacity import retry, wait_exponential, stop_after_attempt
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import Session, select, SQLModel, and_
-from .models import User, Subject, Result, Question
-from typing import Optional, List, Type, Dict, Any
+from asyncpg.exceptions import PostgresError
 from contextlib import asynccontextmanager
 from LoggingService import LoggerService
 from sqlalchemy.orm import sessionmaker
@@ -12,7 +14,7 @@ from time import time
 
 
 class DatabaseService1:
-    """PostgreSQL uchun rivojlangan asinxron ma'lumotlar bazasi xizmati."""
+    """PostgreSQL uchun mustahkam, xavfsiz va yuqori darajadagi asinxron ma'lumotlar bazasi xizmati."""
     MAX_RETRIES = 5
     ENGINE: Optional[AsyncEngine] = None
 
@@ -23,21 +25,20 @@ class DatabaseService1:
 
     @classmethod
     def get_engine(cls) -> AsyncEngine:
-        """Havza ulanishi sozlanadi."""
         if cls.ENGINE is None:
             cls.ENGINE = create_async_engine(
                 DATABASE_URL,
                 echo=False,
-                pool_size=50,  # Increased pool size for higher concurrency
-                max_overflow=25,  # Increased max overflow
-                pool_timeout=30,  # Reduced pool timeout
-                pool_recycle=300,  # Connection recycle time (5 minutes)
-                pool_pre_ping=True,  # Enable connection health checks
+                pool_size=50,
+                max_overflow=25,
+                pool_timeout=30,
+                pool_recycle=1800,  # 30 daqiqa
+                pool_pre_ping=True,
                 connect_args={
                     "server_settings": {
                         "application_name": "DarsJadval",
-                        "statement_timeout": "60000",  # 60 seconds timeout for queries
-                        "idle_in_transaction_session_timeout": "300000",  # 5 minutes timeout for idle transactions
+                        "statement_timeout": "60000",
+                        "idle_in_transaction_session_timeout": "300000",
                     }
                 }
             )
@@ -45,38 +46,53 @@ class DatabaseService1:
 
     @asynccontextmanager
     async def session_scope(self):
-        """Sessiyani avtomatik boshqarish uchun kontekst menejeri."""
-        async with self.get_session() as session:
+        session = self.get_session()
+        try:
+            yield session
+            await session.commit()
+        except (DBAPIError, OperationalError, InterfaceError, PostgresError) as db_err:
+            if self.logging:
+                self.logging.error("Database error during session_scope", exc_info=True)
+            await session.rollback()
+            raise
+        except Exception as e:
+            if self.logging:
+                self.logging.error("General error during session_scope", exc_info=True)
+            await session.rollback()
+            raise
+        finally:
             try:
-                yield session
+                await session.close()
             except Exception as e:
                 if self.logging:
-                    self.logging.error(f"Session error: {e}", exc_info=True)
-                await session.rollback()
-                raise
-            finally:
-                await session.close()
+                    self.logging.warning("Session close failed", exc_info=True)
 
     def get_session(self) -> AsyncSession:
-        """Yangi sessiya ob'ektini qaytaradi."""
         return self.session_factory()
 
-    @retry(wait=wait_exponential(multiplier=1, min=1, max=10), stop=stop_after_attempt(MAX_RETRIES))
-    async def execute_query(self, query: Any, *args, **kwargs):
-        """Umumiy so'rovni bajaruvchi funksiya."""
+    @retry(
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        stop=stop_after_attempt(MAX_RETRIES),
+        retry=retry_if_exception_type((DBAPIError, OperationalError, InterfaceError, PostgresError))
+    )
+    async def execute_query(self, query: Callable[[AsyncSession], Coroutine], *args, **kwargs):
         start_time = time()
         async with self.session_scope() as session:
             try:
                 if self.logging:
-                    self.logging.info(f"Executing query: {query.__name__ if callable(query) else query}")
-                result = await query(session, *args, **kwargs) if callable(query) else await session.execute(query)
+                    self.logging.info(f"Executing query: {getattr(query, '__name__', str(query))}")
+                result = await query(session, *args, **kwargs)
                 elapsed_time = time() - start_time
                 if self.logging:
                     self.logging.info(f"Query executed in {elapsed_time:.2f} seconds.")
                 return result
+            except (DBAPIError, OperationalError, InterfaceError, PostgresError) as db_err:
+                if self.logging:
+                    self.logging.error("Database-level error in execute_query", exc_info=True)
+                raise
             except Exception as e:
                 if self.logging:
-                    self.logging.error(f"Error executing query: {e}", exc_info=True)
+                    self.logging.error("General error in execute_query", exc_info=True)
                 raise
 
     async def add(self, instance: SQLModel) -> Optional[int]:
@@ -93,42 +109,6 @@ class DatabaseService1:
                 if self.logging:
                     self.logging.error(f"Error adding instance: {e}", exc_info=True)
                 raise
-
-    async def update(self, instance: SQLModel) -> Optional[int]:
-        """Mavjud yozuvni yangilaydi."""
-        async with self.session_scope() as session:
-            try:
-                instance = await session.merge(instance)
-                await session.commit()
-                await session.refresh(instance)
-                if self.logging:
-                    self.logging.info(f"Updated instance: {instance}")
-                return instance.id
-            except Exception as e:
-                if self.logging:
-                    self.logging.error(f"Error updating instance: {e}", exc_info=True)
-                raise
-
-    async def update_user_by_telegram_id(self, telegram_id: str, updates: dict):
-        """Telegram ID orqali foydalanuvchini yangilaydi."""
-        async with AsyncSession(self.engine) as session:
-            # Telegram ID orqali foydalanuvchini topamiz
-            result = await session.execute(
-                select(User).where(User.telegram_id == telegram_id)
-            )
-            user = result.scalar_one_or_none()
-
-            if user:
-                # Dikt orqali yangilanishlarni qo‘llash
-                for key, value in updates.items():
-                    if value is not None:
-                        setattr(user, key, value)
-
-                # Yangilangan foydalanuvchini saqlaymiz
-                return await self.update(user)
-            else:
-                self.logging.error(f"User with telegram_id {telegram_id} not found")
-                return None
 
     async def get(self, model: Type[SQLModel], filters: Optional[Dict[str, Any]] = None, limit: Optional[int] = None) -> \
             List[SQLModel]:
@@ -162,68 +142,88 @@ class DatabaseService1:
                     self.logging.error(f"Error retrieving data from {model.__name__}: {e}", exc_info=True)
                 raise
 
+    async def update(self, instance: SQLModel) -> Optional[int]:
+        """Mavjud yozuvni yangilaydi."""
+        async with self.session_scope() as session:
+            try:
+                instance = await session.merge(instance)
+                await session.commit()
+                await session.refresh(instance)
+                if self.logging:
+                    self.logging.info(f"Updated instance: {instance}")
+                return instance.id
+            except Exception as e:
+                if self.logging:
+                    self.logging.error(f"Error updating instance: {e}", exc_info=True)
+                raise
+
+    async def update_by_field(self, model: Type[SQLModel], field_name: str, field_value: Any, updates: dict) -> \
+            Optional[int]:
+        """
+        Model va field_name orqali yozuvni yangilaydi.
+        :param model: Yangilanishi kerak bo‘lgan model (masalan: User, Subject, va h.k.)
+        :param field_name: Yozuvni izlash uchun ishlatiladigan maydon nomi (masalan: "telegram_id", "id")
+        :param field_value: Yuqoridagi maydonning qiymati (masalan: "123456", 1)
+        :param updates: Yangilanishlarni ko‘rsatuvchi dict (masalan, {"username": "new_value"})
+        :return: Yangilangan yozuvning ID si yoki None
+        """
+        async with self.session_scope() as session:
+            try:
+                # Field orqali yozuvni topish
+                query = select(model).where(getattr(model, field_name) == field_value)
+                result = await session.execute(query)
+                instance = result.scalar_one_or_none()
+
+                if instance:
+                    # Dikt orqali yangilanishlarni qo‘llash
+                    for key, value in updates.items():
+                        if value is not None and hasattr(instance, key):
+                            setattr(instance, key, value)
+
+                    # Yozuvni yangilash
+                    instance = await session.merge(instance)
+
+                    # Yangilanishlarni saqlash
+                    await session.commit()
+
+                    # Yangilangan yozuvni qaytarish
+                    await session.refresh(instance)
+
+                    if self.logging:
+                        self.logging.info(f"Updated {model.__name__} instance with {field_name} = {field_value}")
+                    return instance.id
+                else:
+                    if self.logging:
+                        self.logging.error(f"{model.__name__} with {field_name} = {field_value} not found")
+                    return None
+            except Exception as e:
+                if self.logging:
+                    self.logging.error(
+                        f"Error updating {model.__name__} instance with {field_name} = {field_value}: {e}",
+                        exc_info=True)
+                raise
+
+    async def update_user_by_telegram_id(self, telegram_id: str, updates: dict):
+        """Telegram ID orqali foydalanuvchini yangilaydi."""
+        async with AsyncSession(self.engine) as session:
+            # Telegram ID orqali foydalanuvchini topamiz
+            result = await session.execute(
+                select(User).where(User.telegram_id == telegram_id)
+            )
+            user = result.scalar_one_or_none()
+
+            if user:
+                # Dikt orqali yangilanishlarni qo‘llash
+                for key, value in updates.items():
+                    if value is not None:
+                        setattr(user, key, value)
+
+                # Yangilangan foydalanuvchini saqlaymiz
+                return await self.update(user)
+            else:
+                self.logging.error(f"User with telegram_id {telegram_id} not found")
+                return None
+
 
 async def get_db_core() -> DatabaseService1:
     return DatabaseService1()
-
-#
-# class DatabaseService:
-#     def __init__(self, engine):
-#         self.engine = engine
-#
-#     def __add_or_update(self, session: Session, user: User, user_data: dict):
-#         """Foydalanuvchi mavjud bo'lsa, update qiladi, aks holda yaratadi."""
-#         if user:  # Foydalanuvchi mavjud bo'lsa, ma'lumotlarni yangilash
-#             for key, value in user_data.items():
-#                 if hasattr(user, key) and value is not None:  # Faqat bo'sh bo'lmagan qiymatlarni yangilash
-#                     setattr(user, key, value)
-#         else:  # Yangi foydalanuvchi yaratish
-#             user = User(**user_data)
-#             session.add(user)
-#
-#         session.commit()
-#         session.refresh(user)
-#         print(f"User added/updated: {user}")
-#         return user.id
-#
-#     def add_user(self, telegram_id: str, username: Optional[str] = None, phone_number: Optional[str] = None,
-#                  telegram_number: Optional[str] = None, telegram_name: Optional[str] = None, name: Optional[str] = None,
-#                  tuman: Optional[str] = None, viloyat: Optional[str] = None,
-#                  passport: Optional[str] = None, faculty: Optional[str] = None,
-#                  talim_turi: Optional[str] = None, talim_tili: Optional[str] = None, jshir_id: Optional[str] = None):
-#         """Foydalanuvchini qo'shadi yoki yangilaydi."""
-#         with Session(self.engine) as session:
-#             # Telegram ID bo‘yicha foydalanuvchini qidirish
-#             user = session.exec(select(User).where(User.telegram_id == telegram_id)).first()
-#
-#             user_data = {
-#                 "username": username,
-#                 "telegram_id": telegram_id,
-#                 "phone_number": phone_number,
-#                 "telegram_number": telegram_number,
-#                 "telegram_name": telegram_name,
-#                 "name": name,
-#                 "tuman": tuman,
-#                 "viloyat": viloyat,
-#                 "passport": passport,
-#                 "jshir_id": jshir_id,
-#                 "faculty": faculty,
-#                 "talim_turi": talim_turi,
-#                 "talim_tili": talim_tili
-#             }
-#
-#             return self.__add_or_update(session, user, user_data)
-#
-#     def get_user_exists(self, telegram_id: str) -> bool:
-#         """Foydalanuvchi mavjudligini tekshiradi."""
-#         with Session(self.engine) as session:
-#             return session.exec(select(User).where(User.telegram_id == telegram_id)).first() is not None
-#
-#     def get_by_passport_exists(self, passport: str) -> bool:
-#         """Foydalanuvchi passport mavjudligini tekshiradi."""
-#         with Session(self.engine) as session:
-#             return session.exec(select(User).where(User.passport == passport)).first() is not None
-#
-#     def get_by_telegram_id(self, telegram_id: str) -> User:
-#         with Session(self.engine) as session:
-#             return session.exec(select(User).where(User.telegram_id == telegram_id)).first()

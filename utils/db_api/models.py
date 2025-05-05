@@ -62,19 +62,14 @@ class Faculty(BaseModel, table=True):
     name: str = Field(..., description="Fakultet nomi")
     faculty_val: str = Field(..., description="Fakultet qiymati")
 
-    blocks: List["FacultyBlock"] = Relationship(back_populates="faculty")
-
 
 class FacultyBlock(SQLModel, table=True):
     __tablename__ = 'faculty_blocks'
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    faculty_id: int = Field(foreign_key="faculties.id")
-    subject_id: int = Field(foreign_key="subjects.id")
+    faculty_val: str = Field(..., description="Fakultet qiymati")
+    subject_val: str = Field(..., description="Fan qiymati")  # FOREIGN KEY subject_val ga qilingan
     block_number: int = Field(..., description="Blok raqami: 1, 2 yoki 3")
-
-    faculty: Faculty = Relationship(back_populates="blocks")
-    subject: Subject = Relationship()
 
 
 class Question(BaseModel, table=True):
@@ -89,6 +84,21 @@ class Question(BaseModel, table=True):
 
     def get_options(self) -> Dict[str, str]:
         return loads(self.options) if self.options else {}
+
+
+class UserAnswer(SQLModel, table=True):
+    __tablename__ = "user_answers"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(..., description="Foydalanuvchi ID (str formatda saqlanadi)")
+    subject_id: int = Field(..., description="Fan ID")
+    question_id: int = Field(..., description="Savol ID")
+    selected_option: str = Field(..., description="Tanlangan variant (A, B, C, D)")
+    is_correct: Optional[bool] = Field(default=None, description="Javob to‘g‘rimi?")
+    answered_at: str = Field(
+        default_factory=lambda: datetime.now(timezone("Asia/Tashkent")).strftime("%Y-%m-%d %H:%M:%S"),
+        description="Javob berilgan vaqt"
+    )
 
 
 class Result(BaseModel, table=True):
