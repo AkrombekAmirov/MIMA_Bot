@@ -1,6 +1,6 @@
 from sqlmodel import SQLModel, Field, Column, TEXT, Relationship
+from datetime import datetime, date, time
 from typing import Optional, Dict, List
-from datetime import datetime
 from json import loads, dumps
 from pytz import timezone
 
@@ -55,6 +55,40 @@ class Subject(BaseModel, table=True):
     __tablename__ = 'subjects'
     name: str = Field(..., description="Fan nomi")
     subject_val: str = Field(..., description="Fan qiymati")
+    language: str = Field(..., description="Fan tili: (O'zbek, Rus, Ingliz...)")
+
+    # 📌 FAN BO‘YICHA QO‘SHIMCHA METODLAR
+
+    def is_uzbek(self) -> bool:
+        """Fan o‘zbek tilidami?"""
+        return self.language.lower() in ["o'zbek", "uzbek", "uz"]
+
+    def is_russian(self) -> bool:
+        """Fan rus tilidami?"""
+        return self.language.lower() in ["rus", "russian", "ru"]
+
+    def is_english(self) -> bool:
+        """Fan ingliz tilidami?"""
+        return self.language.lower() in ["english", "ingliz", "en"]
+
+    def matches_language(self, lang: str) -> bool:
+        """Fan tili kiritilgan til bilan mos keladimi?"""
+        return self.language.lower() == lang.lower()
+
+    def to_dict(self) -> dict:
+        """Dictionary formatida chiqarish (API uchun qulay)"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "subject_val": self.subject_val,
+            "language": self.language,
+            "description": self.description,
+            "created_date": self.created_date,
+            "created_time": self.created_time
+        }
+
+    def __repr__(self):
+        return f"<Subject: {self.name} [{self.language}]>"
 
 
 class Faculty(BaseModel, table=True):
@@ -101,82 +135,56 @@ class UserAnswer(SQLModel, table=True):
     )
 
 
-class Result(BaseModel, table=True):
+class Result(SQLModel, table=True):
     __tablename__ = 'results'
-    user_id: str = Field(sa_column=Column(TEXT), description="Foydalanuvchi ID")
-    subject_id: int = Field(..., description="Fan ID")
-    question_ids: str = Field(sa_column=Column(TEXT), description="Savol ID larining ro'yxati JSON formatida")
-    user_answers: str = Field(sa_column=Column(TEXT), description="Foydalanuvchi javoblari JSON formatida")
-    correct_answers: int = Field(default=0, description="To'g'ri javoblar soni")
-    wrong_answers: int = Field(default=0, description="Noto'g'ri javoblar soni")
-    number: int = Field(default=0, description="Test holati uchun")
-    status: bool = Field(default=False, description="Test holati")
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(sa_column=Column(TEXT))
+    subject_id: int
+    question_ids: str = Field(sa_column=Column(TEXT))  # JSON list of question_ids
+    user_answers: str = Field(sa_column=Column(TEXT))  # JSON list of selected_options
+    correct_answers: int = Field(default=0)
+    wrong_answers: int = Field(default=0)
+    number: int = Field(default=0)
+    status: bool = Field(default=False)
+    created_date: date = Field(default_factory=lambda: datetime.now().date())
+    created_time: time = Field(default_factory=lambda: datetime.now().time())
+    updated_date: date = Field(default_factory=lambda: datetime.now().date())
+    updated_time: time = Field(default_factory=lambda: datetime.now().time())
 
     class Config:
         from_attributes = True
         populate_by_name = True
-        json_encoders = {datetime: lambda v: v.isoformat()}
 
     def set_question_ids(self, ids: List[int]) -> None:
-        """Savol ID larini JSON formatida saqlaydi."""
         self.question_ids = dumps(ids)
 
     def get_question_ids(self) -> List[int]:
-        """Savol ID larini JSON formatidan ro‘yxatga aylantiradi."""
         return loads(self.question_ids) if self.question_ids else []
 
     def set_user_answers(self, answers: List[str]) -> None:
-        """Foydalanuvchi javoblarini JSON formatida saqlaydi."""
         self.user_answers = dumps(answers)
 
     def get_user_answers(self) -> List[str]:
-        """Foydalanuvchi javoblarini JSON formatidan ro‘yxatga aylantiradi."""
         return loads(self.user_answers) if self.user_answers else []
 
-    def add_user_answer(self, question_id: int, answer: str) -> None:
-        """
-        Foydalanuvchi tomonidan berilgan javobni qo'shadi.
-        Savolga javob qo'shish uchun, user_answers listiga yangi javobni kiritadi.
-        """
-        # Savol ID larini olish
-        question_ids = self.get_question_ids()
-
-        # Foydalanuvchi javoblarini olish
-        user_answers = self.get_user_answers()
-
-        # Agar savol ID mavjud bo'lsa, uni yangilaymiz
-        if question_id not in question_ids:
-            question_ids.append(question_id)
-            user_answers.append(answer)
-        else:
-            # Agar savol allaqachon kiritilgan bo'lsa, javobni yangilaymiz
-            index = question_ids.index(question_id)
-            user_answers[index] = answer
-
-        # Yangilangan ma'lumotlarni saqlaymiz
-        self.set_question_ids(question_ids)
-        self.set_user_answers(user_answers)
-
-    def update_score(self, correct: int, wrong: int) -> None:
-        """Natijalarni yangilaydi."""
-        self.correct_answers += correct
-        self.wrong_answers += wrong
+    def recalculate_scores(self, correct_map: dict[int, str]) -> None:
+        """Savollar bo‘yicha to‘g‘ri va noto‘g‘ri javoblarni yangidan hisoblaydi."""
+        correct = 0
+        wrong = 0
+        q_ids = self.get_question_ids()
+        u_ans = self.get_user_answers()
+        for i, q_id in enumerate(q_ids):
+            if i >= len(u_ans):
+                continue
+            correct_answer = correct_map.get(q_id)
+            if correct_answer:
+                if u_ans[i] == correct_answer:
+                    correct += 1
+                else:
+                    wrong += 1
+        self.correct_answers = correct
+        self.wrong_answers = wrong
 
     def accuracy(self) -> float:
-        """To‘g‘ri javoblar foizini qaytaradi."""
-        total_answers = self.correct_answers + self.wrong_answers
-        return (self.correct_answers / total_answers) * 100 if total_answers > 0 else 0
-
-    def is_passed(self) -> bool:
-        """Testdan o‘tish holatini tekshiradi."""
-        return self.accuracy() >= 50
-
-    def to_summary(self) -> dict:
-        """Natijalar haqida qisqacha ma'lumot."""
-        return {
-            "user_id": self.user_id,
-            "test_id": self.id,
-            "accuracy": self.accuracy(),
-            "status": self.status,
-            "created_date": self.created_date.isoformat()
-        }
+        total = self.correct_answers + self.wrong_answers
+        return (self.correct_answers / total * 100) if total > 0 else 0

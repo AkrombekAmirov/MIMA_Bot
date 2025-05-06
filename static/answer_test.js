@@ -1,3 +1,5 @@
+// ✅ YANGILANGAN JAVASCRIPT TIMER KODI (answer_test.js) — PROGRESS BAR TO‘G‘RI VAQTDAN BOSHLANADI
+
 const USER_ID = parseInt(document.getElementById('user-id').value);
 
 const container = document.getElementById("questions-container");
@@ -26,7 +28,7 @@ async function fetchQuestions() {
     }
 
     const data = await res.json();
-    const { block_number, subject_name, subject_id, questions } = data;
+    const { block_number, subject_name, subject_id, questions, start_time } = data;
     subjectId = subject_id;
     blockNumber = block_number;
 
@@ -89,19 +91,31 @@ async function fetchQuestions() {
       navButtons.appendChild(navBtn);
     });
 
-    totalSeconds = blockNumber === 1 ? 3600 : 1800;
-    startCountdown();
+    // ✅ Taymerni boshlanish vaqtiga mos ravishda hisoblaymiz
+    const initial = blockNumber === 1 ? 3600 : 1800; // sekund
+    const startDateTime = new Date(start_time); // UTC ISO formatda keladi
+    const now = new Date();
+    const elapsedSeconds = Math.floor((now.getTime() - startDateTime.getTime()) / 1000);
+
+    totalSeconds = initial - elapsedSeconds;
+    if (totalSeconds <= 0) {
+      Swal.fire("⏳ Vaqt tugagan", "Blok avtomatik yakunlanmoqda...", "info");
+      finishBtn.click();
+    } else {
+      startCountdown(initial);
+    }
+
   } catch (err) {
     console.error("Xatolik:", err);
     Swal.fire("Xatolik", "Savollarni yuklashda muammo yuz berdi", "error");
   }
 }
 
-function startCountdown() {
-  updateProgressBar();
+function startCountdown(initial) {
+  updateProgressBar(initial);
   countdownInterval = setInterval(() => {
     totalSeconds--;
-    updateProgressBar();
+    updateProgressBar(initial);
 
     if (totalSeconds <= 0) {
       clearInterval(countdownInterval);
@@ -111,14 +125,13 @@ function startCountdown() {
   }, 1000);
 }
 
-function updateProgressBar() {
+function updateProgressBar(initial) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   timeRemaining.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-  const initial = blockNumber === 1 ? 3600 : 1800;
   const percent = ((initial - totalSeconds) / initial) * 100;
-  progressBar.style.width = `${100 - percent}%`; // Left-to-right kamayish
+  progressBar.style.width = `${100 - percent}%`; // chapdan o'ngga kamayadi
 }
 
 finishBtn.addEventListener("click", async () => {
@@ -127,15 +140,12 @@ finishBtn.addEventListener("click", async () => {
     return;
   }
 
-  const spentMinutes = Math.floor((blockNumber === 1 ? 3600 : 1800 - totalSeconds) / 60);
-
   const res = await fetch(`/user/api/finish-block`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       user_id: USER_ID,
-      subject_id: subjectId,
-      spent_time: spentMinutes
+      subject_id: subjectId
     })
   });
 

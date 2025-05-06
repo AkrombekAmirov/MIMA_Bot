@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from .Basemodels import UserPassportResponse
 from LoggingService import LoggerService
 from typing import List, Dict, Any
-from datetime import datetime, timedelta
-from random import sample
-from pytz import timezone
+from pytz import timezone, utc
 from json import dumps, loads
+from datetime import datetime
+from random import sample
 
 db = DatabaseService1(logger=LoggerService())
 
@@ -97,9 +97,8 @@ async def start_real_test(user_id: int, db: DatabaseService1 = Depends(get_db_co
         raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
     user = users[0]
 
-    # test_point dan qaysi blokni boshlash kerakligini aniqlaymiz
     try:
-        current_point = int(user.test_point or "1")  # default = 1-blok
+        current_point = int(user.test_point or "1")
     except ValueError:
         current_point = 1
 
@@ -124,11 +123,12 @@ async def start_real_test(user_id: int, db: DatabaseService1 = Depends(get_db_co
             "subject_id": int(subject.subject_val)
         })
 
-    now = datetime.now(timezone("Asia/Tashkent"))
+    tz = timezone("Asia/Tashkent")
+    now = datetime.now(tz)
 
     for subject in subjects:
         if subject["block_number"] != current_point:
-            continue  # faqat kerakli blokni ishlaymiz
+            continue
 
         existing_result = await db.get(Result, filters={
             "user_id": str(user_id),
@@ -144,11 +144,17 @@ async def start_real_test(user_id: int, db: DatabaseService1 = Depends(get_db_co
                 all_questions = await db.get(Question)
                 selected_questions = [q for q in all_questions if q.id in question_ids][answered:]
 
+                # ✅ Start time ni UTC formatga aylantirib yuboramiz (ISO 8601)
+                created_dt = datetime.combine(res.created_date, res.created_time)
+                created_aware = tz.localize(created_dt).astimezone(utc)
+                iso_start_time = created_aware.isoformat()
+
                 return {
                     "block_number": subject["block_number"],
                     "subject_name": subject["subject_name"],
                     "subject_id": subject["subject_id"],
                     "total_blocks": len(subjects),
+                    "start_time": iso_start_time,
                     "questions": [
                         {
                             "id": q.id,
@@ -158,7 +164,6 @@ async def start_real_test(user_id: int, db: DatabaseService1 = Depends(get_db_co
                     ]
                 }
 
-        # blok hali boshlanmagan bo‘lsa — yaratamiz
         if not existing_result:
             selected_questions = await db.get(Question, filters={"subject_id": subject["subject_id"]})
             if not selected_questions:
@@ -172,16 +177,21 @@ async def start_real_test(user_id: int, db: DatabaseService1 = Depends(get_db_co
                 subject_id=subject["subject_id"],
                 question_ids=dumps([q.id for q in selected_questions]),
                 user_answers=dumps([]),
-                start_time=now,
-                end_time=now + timedelta(hours=1) if subject["block_number"] == 1 else None,
-                status=False
+                status=False,
+                created_date=now.date(),
+                created_time=now.time()
             ))
+
+            # ✅ Yangi test yaratildi — hozirgi vaqtni UTC ISO formatda yuboramiz
+            created_aware = now.astimezone(utc)
+            iso_start_time = created_aware.isoformat()
 
             return {
                 "block_number": subject["block_number"],
                 "subject_name": subject["subject_name"],
                 "subject_id": subject["subject_id"],
                 "total_blocks": len(subjects),
+                "start_time": iso_start_time,
                 "questions": [
                     {
                         "id": q.id,
@@ -194,33 +204,69 @@ async def start_real_test(user_id: int, db: DatabaseService1 = Depends(get_db_co
     raise HTTPException(status_code=204, detail="Barcha bloklar yakunlangan.")
 
 
+# ✅ YANGILANGAN submit-answer API (xato va to'g'ri javoblar aniqlik bilan hisoblanadi)
 @router.post("/submit-answer")
 async def submit_answer(data: Dict[str, Any], db: DatabaseService1 = Depends(get_db_core)):
     user_id = str(data["user_id"])
     question_id = data["question_id"]
     selected_option = data["selected_option"]
 
-    # Savol va to'g'ri javobni olish
+    # 1. Savolni topamiz
     questions = await db.get(Question, filters={"id": question_id})
     if not questions:
         raise HTTPException(status_code=404, detail="Savol topilmadi")
     question = questions[0]
-    is_correct = (selected_option == question.correct_answer)
+    correct_answer = question.correct_answer
+    is_correct = selected_option == correct_answer
 
-    # UserAnswer modelda mavjud javobni tekshirish
-    existing_answer = await db.get(UserAnswer, filters={
+    # 2. Result topiladi
+    results = await db.get(Result, filters={
         "user_id": user_id,
-        "question_id": question_id
+        "subject_id": question.subject_id,
+        "status": False
     })
+    if not results:
+        raise HTTPException(status_code=404, detail="Aktiv test topilmadi")
+    result = results[0]
 
-    if existing_answer:
-        # Update
-        await db.update_by_field(UserAnswer, "id", existing_answer[0].id, {
+    question_ids = result.get_question_ids()
+    user_answers = result.get_user_answers()
+
+    # 3. Javobni qo‘shish yoki yangilash (sinxron uzunlikni kafolatlaymiz)
+    try:
+        index = question_ids.index(question_id)
+    except ValueError:
+        index = -1
+
+    if index == -1:
+        question_ids.append(question_id)
+        user_answers.append(selected_option)
+    else:
+        # ⚠️ user_answers ro‘yxati indexni qo‘llab-quvvatlashiga ishonch hosil qilamiz
+        while len(user_answers) < len(question_ids):
+            user_answers.append("")  # noto‘liq ro‘yxatni to‘ldiramiz
+        user_answers[index] = selected_option
+
+    # 4. Yangilanganlarni saqlaymiz
+    result.set_question_ids(question_ids)
+    result.set_user_answers(user_answers)
+
+    # 5. To‘g‘ri va noto‘g‘ri javoblarni hisoblaymiz
+    correct_questions = await db.get(Question, filters={"subject_id": question.subject_id})
+    correct_map = {q.id: q.correct_answer for q in correct_questions}
+    result.recalculate_scores(correct_map)
+
+    # 6. Saqlash
+    await db.update(result)
+
+    # 7. UserAnswer modelini saqlash yoki yangilash
+    existing = await db.get(UserAnswer, filters={"user_id": user_id, "question_id": question_id})
+    if existing:
+        await db.update_by_field(UserAnswer, "id", existing[0].id, {
             "selected_option": selected_option,
             "is_correct": is_correct
         })
     else:
-        # Create
         await db.add(UserAnswer(
             user_id=user_id,
             subject_id=question.subject_id,
@@ -229,57 +275,19 @@ async def submit_answer(data: Dict[str, Any], db: DatabaseService1 = Depends(get
             is_correct=is_correct
         ))
 
-    # Result jadvalidagi mavjud yozuvni yangilash
-    results = await db.get(Result, filters={"user_id": user_id, "subject_id": question.subject_id, "status": False})
-    if not results:
-        raise HTTPException(status_code=404, detail="Result topilmadi")
-
-    result = results[0]
-    question_ids = loads(result.question_ids)
-    user_answers = loads(result.user_answers) if result.user_answers else []
-
-    # Savol indexini aniqlab yangilash
-    try:
-        index = question_ids.index(question_id)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Savol resultda mavjud emas")
-
-    # Eski javobni tahlil qilish (agar bor bo‘lsa)
-    previous_answer = user_answers[index] if index < len(user_answers) else None
-    if index < len(user_answers):
-        user_answers[index] = selected_option
-    else:
-        user_answers.append(selected_option)
-
-    # To‘g‘ri va noto‘g‘ri sonini yangilash
-    correct = result.correct_answers
-    wrong = result.wrong_answers
-
-    if previous_answer:
-        if previous_answer == question.correct_answer:
-            correct -= 1
-        else:
-            wrong -= 1
-
-    if is_correct:
-        correct += 1
-    else:
-        wrong += 1
-
-    await db.update_by_field(Result, "id", result.id, {
-        "user_answers": dumps(user_answers),
-        "correct_answers": correct,
-        "wrong_answers": wrong
-    })
-
-    return {"message": "Javob yangilandi", "correct": is_correct}
+    return {
+        "message": "✅ Javob saqlandi",
+        "correct": is_correct,
+        "correct_answers": result.correct_answers,
+        "wrong_answers": result.wrong_answers,
+        "accuracy": result.accuracy()
+    }
 
 
 @router.post("/finish-block")
 async def finish_block(payload: dict, db: DatabaseService1 = Depends(get_db_core)):
     user_id = payload.get("user_id")
     subject_id = payload.get("subject_id")
-    spent_time = payload.get("spent_time")  # daqiqalarda
 
     results = await db.get(Result, filters={"user_id": str(user_id), "subject_id": subject_id, "status": False})
     if not results:
@@ -287,12 +295,19 @@ async def finish_block(payload: dict, db: DatabaseService1 = Depends(get_db_core
 
     result = results[0]
     result.status = True
-    result.updated_date = datetime.now(timezone("Asia/Tashkent")).strftime("%Y-%m-%d")
-    result.updated_time = datetime.now(timezone("Asia/Tashkent")).strftime("%H:%M:%S")
+    tz = timezone("Asia/Tashkent")
+    now = datetime.now(tz)
+    result.updated_date = now.date()  # ✅ strftime emas!
+    result.updated_time = now.time()  # ✅ strftime emas!
+    try:
+        started_naive = datetime.combine(result.created_date, result.created_time)
+        started = tz.localize(started_naive)  # ✅ aware datetime ga aylantiramiz
 
-    if spent_time:
-        result.number = spent_time  # daqiqalarda ishlagan vaqt (shu maydonni ishlatyapmiz)
-
+        spent_time = int((now - started).total_seconds() // 60)
+        result.number = spent_time
+    except Exception as e:
+        print("❌ Spent time hisobida xato:", e)
+        result.number = 0
     await db.update(result)
 
     total = len(loads(result.question_ids))

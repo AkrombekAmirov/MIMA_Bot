@@ -73,8 +73,11 @@ class BotHandler:
                 telegram_id=user_id,
                 username=message.from_user.username or "",
                 telegram_name=message.from_user.full_name,
-                telegram_number=contact.phone_number)
+                telegram_number=contact.phone_number,
+                status=False,
+                test_point='1'
             )
+            ) # Sevimli , Mening yurtim,
             await state.update_data({"telegram_number": contact.phone_number})
             await message.answer("Xizmat turini tanlang:", reply_markup=choose_visitor)
         else:

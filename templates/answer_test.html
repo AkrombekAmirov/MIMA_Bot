@@ -19,28 +19,34 @@
       position: sticky;
       top: 20px;
     }
+
+    /* 🔧 Taymer bar katta va ko‘rinarli holatga keltirildi */
     #progress-timer-wrapper {
       position: relative;
       width: 100%;
-      height: 28px;
+      height: 50px; /* ✅ Bar balandligi oshirildi */
       background-color: #f3f4f6;
       border-radius: 9999px;
       overflow: hidden;
+      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
     }
+
     #progress-bar {
       height: 100%;
       width: 100%;
       background: linear-gradient(to left, #34d399, #3b82f6);
       transition: width 1s linear;
     }
+
     #time-remaining {
       position: absolute;
       width: 100%;
       top: 0;
       text-align: center;
+      font-size: 1.5rem;     /* ✅ Raqamlar kattalashtirildi */
       font-weight: bold;
       color: #111827;
-      line-height: 28px;
+      line-height: 50px;     /* ✅ Bar balandligiga moslashtirildi */
     }
   </style>
 </head>
@@ -54,9 +60,9 @@
       <div class="bg-white p-4 shadow rounded sticky-nav">
         <h2 class="text-xl font-bold mb-4">⏱ Taymer</h2>
 
-        <div id="progress-timer-wrapper" class="mb-4">
+        <div id="progress-timer-wrapper" class="mb-6">
           <div id="progress-bar"></div>
-          <span id="time-remaining"></span>
+          <span id="time-remaining">--:--</span>
         </div>
 
         <div id="nav-buttons" class="grid grid-cols-5 gap-2 text-center"></div>
