@@ -120,8 +120,7 @@ choose_language = InlineKeyboardMarkup(inline_keyboard=[
 choose_education_status = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text="✅ Kunduzgi ta'lim", callback_data="Kunduzgi"),
-            InlineKeyboardButton(text="📘 Sirtqi ta'lim", callback_data="Sirtqi")
+            InlineKeyboardButton(text="✅ Kunduzgi ta'lim", callback_data="Kunduzgi")
         ]
     ]
 )
@@ -129,9 +128,6 @@ choose_education_status = InlineKeyboardMarkup(
 choose_education_status_info = InlineKeyboardMarkup(inline_keyboard=[
     [
         InlineKeyboardButton(text="🎓 Kunduzgi ta'lim shakli", callback_data="Kunduzgi_info")
-    ],
-    [
-        InlineKeyboardButton(text="🕓 Sirtqi ta'lim shakli", callback_data="Sirtqi_info")
     ],
     [
         InlineKeyboardButton(text="📄 Litsenziya bilan tanishish", callback_data="license_info")
