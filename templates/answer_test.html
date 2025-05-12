@@ -1,53 +1,29 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Test Savollari</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- MathJax konfiguratsiya -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(','\\)']],
+        displayMath: [['\\[','\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
   <style>
-    .active-btn {
-      background-color: #34d399 !important;
-      color: white !important;
-      font-weight: bold;
-    }
-    .option-btn.active {
-      background-color: #bfdbfe;
-      font-weight: 600;
-    }
-    .sticky-nav {
-      position: sticky;
-      top: 20px;
-    }
-
-    /* 🔧 Taymer bar katta va ko‘rinarli holatga keltirildi */
-    #progress-timer-wrapper {
-      position: relative;
-      width: 100%;
-      height: 50px; /* ✅ Bar balandligi oshirildi */
-      background-color: #f3f4f6;
-      border-radius: 9999px;
-      overflow: hidden;
-      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
-    }
-
-    #progress-bar {
-      height: 100%;
-      width: 100%;
-      background: linear-gradient(to left, #34d399, #3b82f6);
-      transition: width 1s linear;
-    }
-
-    #time-remaining {
-      position: absolute;
-      width: 100%;
-      top: 0;
-      text-align: center;
-      font-size: 1.5rem;     /* ✅ Raqamlar kattalashtirildi */
-      font-weight: bold;
-      color: #111827;
-      line-height: 50px;     /* ✅ Bar balandligiga moslashtirildi */
-    }
+    .active-btn { background-color: #34d399 !important; color: white !important; font-weight: bold; }
+    .option-btn.active { background-color: #bfdbfe; font-weight: 600; }
+    .sticky-nav { position: sticky; top: 20px; }
+    #progress-timer-wrapper { position: relative; width:100%; height:50px; background:#f3f4f6; border-radius:9999px; overflow:hidden; box-shadow:inset 0 0 5px rgba(0,0,0,0.1); }
+    #progress-bar { height:100%; width:100%; background:linear-gradient(to left,#34d399,#3b82f6); transition:width 1s linear; }
+    #time-remaining { position:absolute; width:100%; top:0; text-align:center; font-size:1.5rem; font-weight:bold; color:#111827; line-height:50px; }
   </style>
 </head>
 <body class="bg-gray-100 p-6">
@@ -55,29 +31,24 @@
   <input type="hidden" id="user-id" value="{{ user_id }}" />
 
   <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-6">
-    <!-- Navigatsiya -->
+    <!-- Taymer + Navigatsiya -->
     <div class="md:col-span-1">
       <div class="bg-white p-4 shadow rounded sticky-nav">
         <h2 class="text-xl font-bold mb-4">⏱ Taymer</h2>
-
         <div id="progress-timer-wrapper" class="mb-6">
           <div id="progress-bar"></div>
           <span id="time-remaining">--:--</span>
         </div>
-
         <div id="nav-buttons" class="grid grid-cols-5 gap-2 text-center"></div>
         <button id="finish-test-btn"
-          class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded shadow">
+                class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded shadow">
           Imtihonni yakunlash
         </button>
       </div>
     </div>
-
     <!-- Savollar -->
     <div class="md:col-span-3">
-      <div class="bg-white p-6 shadow rounded space-y-8" id="questions-container">
-        <!-- JavaScript orqali to‘ldiriladi -->
-      </div>
+      <div id="questions-container" class="bg-white p-6 shadow rounded space-y-8"></div>
     </div>
   </div>
 

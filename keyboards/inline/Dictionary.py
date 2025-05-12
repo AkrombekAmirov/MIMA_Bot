@@ -10,46 +10,44 @@ list_region1 = ["Toshkent viloyati", "Toshkent shahri", "Samarqand viloyati", "N
 list_faculty = ["faculty0", "faculty1", "faculty2", "faculty3", "faculty4", "faculty5", "faculty6", "faculty7",
                 "faculty8", "faculty9", "faculty10", "faculty11", "faculty12", "faculty13", "faculty14", "faculty15",
                 "faculty16", "faculty17"]
-faculty_file_map = {
-    "faculty0": "ariza_144.docx",
-    "faculty1": "ariza_144.docx",
-    "faculty2": "ariza_144.docx",
-    "faculty3": "ariza_144.docx",
-    "faculty4": "ariza_144.docx",
-    "faculty5": "ariza_144.docx",
-    "faculty6": "ariza_144.docx",
-    "faculty7": "ariza_144.docx",
-    "faculty8": "ariza_576.docx",
-    "faculty9": "ariza_576.docx",
-    "faculty10": "ariza_576.docx",
-    "faculty11": "ariza_864.docx",
-    "faculty12": "ariza_36.docx",
-    "faculty13": "ariza_288_OTM.docx",
-    "faculty14": "ariza_288_OTM.docx",
-    "faculty15": "ariza_288_OTM.docx",
-    "faculty16": "ariza_288_OTM.docx",
-    "faculty17": "ariza_288_OTM.docx"
-}
-faculty_file_map1 = {
-    "faculty0": "shartnoma_144.docx",
-    "faculty1": "shartnoma_144.docx",
-    "faculty2": "shartnoma_144.docx",
-    "faculty3": "shartnoma_144.docx",
-    "faculty4": "shartnoma_144.docx",
-    "faculty5": "shartnoma_144.docx",
-    "faculty6": "shartnoma_144.docx",
-    "faculty7": "shartnoma_144.docx",
-    "faculty8": "shartnoma_576.docx",
-    "faculty9": "shartnoma_576.docx",
-    "faculty10": "shartnoma_576.docx",
-    "faculty11": "shartnoma_864.docx",
-    "faculty12": "shartnoma_36.docx",
-    "faculty13": "shartnoma_288_OTM.docx",
-    "faculty14": "shartnoma_288_OTM.docx",
-    "faculty15": "shartnoma_288_OTM.docx",
-    "faculty16": "shartnoma_288_OTM.docx",
-    "faculty17": "shartnoma_288_OTM.docx"
-}
+# await db.add(FacultyBlock(faculty_val='1', subject_val='2', block_number=1))
+# await db.add(FacultyBlock(faculty_val='1', subject_val='8', block_number=2))
+# await db.add(FacultyBlock(faculty_val='1', subject_val='7', block_number=3))
+# await db.add(FacultyBlock(faculty_val='2', subject_val='2', block_number=1))
+# await db.add(FacultyBlock(faculty_val='2', subject_val='8', block_number=2))
+# await db.add(FacultyBlock(faculty_val='2', subject_val='7', block_number=3))
+# await db.add(FacultyBlock(faculty_val='3', subject_val='2', block_number=1))
+# await db.add(FacultyBlock(faculty_val='3', subject_val='8', block_number=2))
+# await db.add(FacultyBlock(faculty_val='3', subject_val='7', block_number=3))
+# await db.add(FacultyBlock(faculty_val='4', subject_val='2', block_number=1))
+# await db.add(FacultyBlock(faculty_val='4', subject_val='8', block_number=2))
+# await db.add(FacultyBlock(faculty_val='4', subject_val='7', block_number=3))
+# await db.add(FacultyBlock(faculty_val='5', subject_val='3', block_number=1))
+# await db.add(FacultyBlock(faculty_val='5', subject_val='8', block_number=2))
+# await db.add(FacultyBlock(faculty_val='5', subject_val='7', block_number=3))
+# await db.add(FacultyBlock(faculty_val='6', subject_val='2', block_number=1))
+# await db.add(FacultyBlock(faculty_val='6', subject_val='8', block_number=2))
+# await db.add(FacultyBlock(faculty_val='6', subject_val='7', block_number=3))
+# await db.add(FacultyBlock(faculty_val='7', subject_val='1', block_number=1))
+# await db.add(FacultyBlock(faculty_val='7', subject_val='8', block_number=2))
+# await db.add(FacultyBlock(faculty_val='7', subject_val='7', block_number=3))
+# await db.add(FacultyBlock(faculty_val='8', subject_val='2', block_number=1))
+# await db.add(FacultyBlock(faculty_val='8', subject_val='8', block_number=2))
+# await db.add(FacultyBlock(faculty_val='8', subject_val='7', block_number=3))
+# await db.add(FacultyBlock(faculty_val='9', subject_val='2', block_number=1))
+# await db.add(FacultyBlock(faculty_val='9', subject_val='8', block_number=2))
+# await db.add(FacultyBlock(faculty_val='9', subject_val='7', block_number=3))
+# await db.add(FacultyBlock(faculty_val='2', subject_val='2', block_number=1))
+# await db.add(Subject(name="Huquqshunoslik", subject_val='1', language="O'zbek tili"))
+# await db.add(Subject(name="Matematika", subject_val='2', language="O'zbek tili"))
+# await db.add(Subject(name="Psixologiya", subject_val='3', language="O'zbek tili"))
+# await db.add(Subject(name="Huquqshunoslik", subject_val='4', language="Rus tili"))
+# await db.add(Subject(name="Matematika", subject_val='5', language="Rus tili"))
+# await db.add(Subject(name="Psixologiya", subject_val='6', language="Rus tili"))
+# await db.add(Subject(name="Ingliz tili", subject_val='7', language="O'zbek tili"))
+# await db.add(Subject(name="Ona tili", subject_val='8', language="O'zbek tili"))
+# await db.add(Subject(name="Nemis tili", subject_val='9', language="O'zbek tili"))
+# await db.add(Subject(name="Fransuz tili", subject_val='10', language="O'zbek tili"))
 
 faculty_file_map2 = {
     "faculty0": 'Mehnat muhofazasi va texnika xavfsizligi',

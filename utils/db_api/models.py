@@ -1,7 +1,9 @@
-from sqlmodel import SQLModel, Field, Column, TEXT, Relationship
+from sqlmodel import SQLModel, Field, Column, TEXT
 from datetime import datetime, date, time
 from typing import Optional, Dict, List
+from pydantic import root_validator
 from json import loads, dumps
+from random import shuffle
 from pytz import timezone
 
 
@@ -51,8 +53,9 @@ class User(SQLModel, table=True):
         self.created_time = now.strftime("%H:%M:%S")
 
 
-class Subject(BaseModel, table=True):
+class Subject(SQLModel, table=True):
     __tablename__ = 'subjects'
+    id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(..., description="Fan nomi")
     subject_val: str = Field(..., description="Fan qiymati")
     language: str = Field(..., description="Fan tili: (O'zbek, Rus, Ingliz...)")
@@ -114,10 +117,51 @@ class Question(BaseModel, table=True):
     option2: str = Field(..., description="Javob variantlari")
     option3: str = Field(..., description="Javob variantlari")
     option4: str = Field(..., description="Javob variantlari")
+    formula: Optional[str] = Field(default="", description="LaTeX formulasi", nullable=True)
     correct_answer: str = Field(..., description="To'g'ri javob")
 
     def get_options(self) -> Dict[str, str]:
         return loads(self.options) if self.options else {}
+
+    @root_validator(pre=True)
+    def ensure_correct_in_options(cls, values):
+        opts = [values.get('option1'), values.get('option2'), values.get('option3'), values.get('option4')]
+        corr = values.get('correct_answer')
+        if corr not in opts:
+            raise ValueError(f"correct_answer '{corr}' must be one of the options {opts}")
+        return values
+
+    def options_list(self) -> List[str]:
+        """Return the list of answer options in order A-D."""
+        return [self.option1, self.option2, self.option3, self.option4]
+
+    def shuffled_options(self) -> List[str]:
+        """Return a new list of options in randomized order."""
+        opts = self.options_list()
+        shuffle(opts)
+        return opts
+
+    def is_correct(self, answer: str) -> bool:
+        """Check if the provided answer matches the correct one."""
+        return answer == self.correct_answer
+
+    def to_dict(self, shuffle: bool = False) -> Dict[str, any]:
+        """
+        Serialize question to dict for API responses.
+        If shuffle=True, options will be randomized.
+        """
+        opts = self.shuffled_options() if shuffle else self.options_list()
+        return {
+            "id": self.id,
+            "subject_id": self.subject_id,
+            "text": self.text,
+            "formula": self.formula,
+            "options": opts,
+            # we don’t expose correct_answer in API payload for exam
+        }
+
+    def __repr__(self) -> str:
+        return f"<Question id={self.id} subject_id={self.subject_id} text={self.text[:30]!r}...>"
 
 
 class UserAnswer(SQLModel, table=True):

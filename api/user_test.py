@@ -3,10 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from .Basemodels import UserPassportResponse
 from LoggingService import LoggerService
 from typing import List, Dict, Any
+from random import sample, shuffle
 from pytz import timezone, utc
 from json import dumps, loads
 from datetime import datetime
-from random import sample
 
 db = DatabaseService1(logger=LoggerService())
 
@@ -16,6 +16,7 @@ router = APIRouter(
     dependencies=[Depends(get_db_core)],
     responses={404: {"description": "Not found"}},
 )
+tz = timezone("Asia/Tashkent")
 
 
 @router.get("/check-passport/", response_model=List[UserPassportResponse])
@@ -48,41 +49,52 @@ async def check_passport(passport: str, db: DatabaseService1 = Depends(get_db_co
 @router.get("/start-test/{user_id}", response_model=Dict[str, Any])
 async def start_test(user_id: int, db: DatabaseService1 = Depends(get_db_core)):
     """
-    Testni boshlash sahifasi: foydalanuvchi ma'lumotlari, fakultet va 3 blok fanlari ro'yxatini qaytaradi.
+    Testni boshlash sahifasi:
+    foydalanuvchi ma'lumotlari, fakultet va 3 blok fanlari ro'yxatini qaytaradi.
+    Til bo‘yicha ham filtrlaymiz.
     """
-    # 1. Foydalanuvchini olish
+    # 1) Foydalanuvchini olish
     users = await db.get(User, filters={"id": user_id})
     if not users:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Foydalanuvchi topilmadi")
     user = users[0]
 
-    # 2. Fakultet aniqlash
+    # 2) Fakultet aniqlash
     faculties = await db.get(Faculty, filters={"name": user.faculty})
     if not faculties:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fakultet topilmadi")
     faculty = faculties[0]
 
-    # 3. Blok bo'yicha fanlar
-    blocks = await db.get(FacultyBlock, filters={"faculty_id": faculty.faculty_val})
-    if not blocks or len(blocks) < 1:
+    # 3) Blok bo‘yicha FacultyBlocklarni olish
+    blocks = await db.get(FacultyBlock, filters={"faculty_val": faculty.faculty_val})
+    if not blocks:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Fakultet uchun bloklar topilmadi")
 
-    # 4. Fan nomlarini bir martada olish
-    # block.subject_val maydoniga bog‘langan bo‘lsa:
+    # 4) Har bir blok uchun tilga mos Subjectni olib kelish
     subjects = []
+    chosen_lang = user.talim_tili  # masalan "O'zbek" yoki "Rus"
     for block in sorted(blocks, key=lambda b: b.block_number):
-        subs = await db.get(Subject, filters={"subject_val": block.subject_val})
+        subs = await db.get(
+            Subject,
+            filters={
+                "subject_val": block.subject_val,
+                "language": chosen_lang
+            }
+        )
         if not subs:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                                detail=f"{block.block_number}-blok uchun subject topilmadi")
+            # Tilga mos fan topilmasa, xatolik qaytaramiz
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"{block.block_number}-blok uchun '{chosen_lang}' tilida fan topilmadi"
+            )
         subject = subs[0]
         subjects.append({
             "block_number": block.block_number,
             "subject_name": subject.name
         })
 
-    # 5. Javobni tuzish
+    # 5) Javobni tuzish (return o‘zgarmaydi)
     return {
         "welcome_message": f"Xush kelibsiz, {user.name}!",
         "faculty": faculty.name,
@@ -90,120 +102,148 @@ async def start_test(user_id: int, db: DatabaseService1 = Depends(get_db_core)):
     }
 
 
-@router.get("/start-real-test/{user_id}")
+@router.get("/start-real-test/{user_id}", response_model=Dict[str, Any])
 async def start_real_test(user_id: int, db: DatabaseService1 = Depends(get_db_core)):
+    # 1) Foydalanuvchini olish
     users = await db.get(User, filters={"id": user_id})
     if not users:
         raise HTTPException(status_code=404, detail="Foydalanuvchi topilmadi")
     user = users[0]
 
+    # 2) Qaysi blokda ekanini aniqlash
     try:
-        current_point = int(user.test_point or "1")
+        current_block = int(user.test_point or "1")
     except ValueError:
-        current_point = 1
+        current_block = 1
 
-    faculties = await db.get(Faculty, filters={"name": user.faculty})
-    if not faculties:
+    # 3) Fakultet va bloklar
+    facs = await db.get(Faculty, filters={"name": user.faculty})
+    if not facs:
         raise HTTPException(status_code=404, detail="Fakultet topilmadi")
-    faculty = faculties[0]
+    faculty = facs[0]
 
     blocks = await db.get(FacultyBlock, filters={"faculty_val": faculty.faculty_val})
     if not blocks:
         raise HTTPException(status_code=400, detail="Fakultet bloklari topilmadi")
 
+    # 4) Tilga mos subject’lar
     subjects = []
-    for block in sorted(blocks, key=lambda b: b.block_number):
-        subs = await db.get(Subject, filters={"subject_val": block.subject_val})
-        if not subs:
-            continue
-        subject = subs[0]
-        subjects.append({
-            "block_number": block.block_number,
-            "subject_name": subject.name,
-            "subject_id": int(subject.subject_val)
-        })
+    for blk in sorted(blocks, key=lambda b: b.block_number):
+        subs = await db.get(
+            Subject,
+            filters={
+                "subject_val": blk.subject_val,
+                "language": user.talim_tili
+            }
+        )
+        if subs:
+            s = subs[0]
+            subjects.append({
+                "block_number": blk.block_number,
+                "subject_name": s.name,
+                "subject_id": int(s.subject_val)
+            })
+    if not subjects:
+        raise HTTPException(status_code=400, detail="Tanlangan til va fakultetga mos fanlar topilmadi")
 
-    tz = timezone("Asia/Tashkent")
-    now = datetime.now(tz)
+    # 5) Faqat current_block uchun ishlash
+    subj = next((s for s in subjects if s["block_number"] == current_block), None)
+    if not subj:
+        raise HTTPException(status_code=400, detail="Noto‘g‘ri blok raqami")
 
-    for subject in subjects:
-        if subject["block_number"] != current_point:
-            continue
+    # 6) Agar yakunlanmagan Result mavjud bo‘lsa — davom etamiz
+    existing: List[Result] = await db.get(Result, filters={
+        "user_id": str(user_id),
+        "subject_id": subj["subject_id"],
+        "status": False
+    })
+    if existing:
+        res = existing[0]
+        q_ids = loads(res.question_ids)
+        u_ans = loads(res.user_answers or "[]")
 
-        existing_result = await db.get(Result, filters={
-            "user_id": str(user_id),
-            "subject_id": subject["subject_id"]
-        })
+        # 6a) Hali barcha savollar javoblanmagan bo‘lsa
+        if len(u_ans) < len(q_ids):
+            remaining_ids = q_ids[len(u_ans):]
+            all_q = await db.get(Question, filters={"subject_id": subj["subject_id"]})
+            remaining = [q for q in all_q if q.id in remaining_ids]
 
-        for res in existing_result:
-            if res.status is False:
-                question_ids = loads(res.question_ids)
-                user_answers = loads(res.user_answers) if res.user_answers else []
-                answered = len(user_answers)
+            # Har bir savol uchun variantlarni aralashtiramiz va formula ni ham jo‘natamiz
+            payload_qs = []
+            for q in remaining:
+                opts = [q.option1, q.option2, q.option3, q.option4]
+                shuffle(opts)
+                payload_qs.append({
+                    "id": q.id,
+                    "text": q.text,
+                    "formula": q.formula or "",
+                    "options": opts
+                })
 
-                all_questions = await db.get(Question)
-                selected_questions = [q for q in all_questions if q.id in question_ids][answered:]
-
-                # ✅ Start time ni UTC formatga aylantirib yuboramiz (ISO 8601)
-                created_dt = datetime.combine(res.created_date, res.created_time)
-                created_aware = tz.localize(created_dt).astimezone(utc)
-                iso_start_time = created_aware.isoformat()
-
-                return {
-                    "block_number": subject["block_number"],
-                    "subject_name": subject["subject_name"],
-                    "subject_id": subject["subject_id"],
-                    "total_blocks": len(subjects),
-                    "start_time": iso_start_time,
-                    "questions": [
-                        {
-                            "id": q.id,
-                            "text": q.text,
-                            "options": [q.option1, q.option2, q.option3, q.option4]
-                        } for q in selected_questions
-                    ]
-                }
-
-        if not existing_result:
-            selected_questions = await db.get(Question, filters={"subject_id": subject["subject_id"]})
-            if not selected_questions:
-                continue
-
-            count = 30 if subject["block_number"] == 1 else 10
-            selected_questions = sample(selected_questions, min(count, len(selected_questions)))
-
-            await db.add(Result(
-                user_id=str(user_id),
-                subject_id=subject["subject_id"],
-                question_ids=dumps([q.id for q in selected_questions]),
-                user_answers=dumps([]),
-                status=False,
-                created_date=now.date(),
-                created_time=now.time()
-            ))
-
-            # ✅ Yangi test yaratildi — hozirgi vaqtni UTC ISO formatda yuboramiz
-            created_aware = now.astimezone(utc)
-            iso_start_time = created_aware.isoformat()
+            # Boshlanish vaqtini UTC‐ga o‘girib yuborish
+            start_dt = datetime.combine(res.created_date, res.created_time)
+            start_aware = tz.localize(start_dt).astimezone(utc)
 
             return {
-                "block_number": subject["block_number"],
-                "subject_name": subject["subject_name"],
-                "subject_id": subject["subject_id"],
+                "block_number": subj["block_number"],
+                "subject_name": subj["subject_name"],
+                "subject_id": subj["subject_id"],
                 "total_blocks": len(subjects),
-                "start_time": iso_start_time,
-                "questions": [
-                    {
-                        "id": q.id,
-                        "text": q.text,
-                        "options": [q.option1, q.option2, q.option3, q.option4]
-                    } for q in selected_questions
-                ]
+                "start_time": start_aware.isoformat(),
+                "questions": payload_qs
             }
 
-    raise HTTPException(status_code=204, detail="Barcha bloklar yakunlangan.")
+        # 6b) Agarda to‘liq javoblangan bo‘lsa — test_point ni oshiramiz
+        if user.test_point == str(current_block):
+            await db.update_by_field(User, "id", user.id, {
+                "test_point": str(current_block + 1)
+            })
 
+    # 7) Yangi blok uchun savollarni tanlab, Result yaratamiz
+    all_questions = await db.get(Question, filters={"subject_id": subj["subject_id"]})
+    if not all_questions:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{subj['block_number']}-blok uchun savollar mavjud emas"
+        )
 
+    count = 30 if subj["block_number"] == 1 else 10
+    chosen = sample(all_questions, min(count, len(all_questions)))
+
+    # Variantlarni har savolga alohida aralashtirish va formula ni ham jo‘natish
+    payload_qs = []
+    for q in chosen:
+        opts = [q.option1, q.option2, q.option3, q.option4]
+        shuffle(opts)
+        payload_qs.append({
+            "id": q.id,
+            "text": q.text,
+            "formula": q.formula or "",
+            "options": opts
+        })
+
+    now = datetime.now(tz)
+    new_res = Result(
+        user_id=str(user_id),
+        subject_id=subj["subject_id"],
+        question_ids=dumps([q.id for q in chosen]),
+        user_answers=dumps([]),
+        status=False,
+        created_date=now.date(),
+        created_time=now.time()
+    )
+    await db.add(new_res)
+
+    # Boshlanish vaqtini UTC‐ga o‘girib yuborish
+    start_aware = now.astimezone(utc)
+    return {
+        "block_number": subj["block_number"],
+        "subject_name": subj["subject_name"],
+        "subject_id": subj["subject_id"],
+        "total_blocks": len(subjects),
+        "start_time": start_aware.isoformat(),
+        "questions": payload_qs
+    }
 # ✅ YANGILANGAN submit-answer API (xato va to'g'ri javoblar aniqlik bilan hisoblanadi)
 @router.post("/submit-answer")
 async def submit_answer(data: Dict[str, Any], db: DatabaseService1 = Depends(get_db_core)):
@@ -295,7 +335,6 @@ async def finish_block(payload: dict, db: DatabaseService1 = Depends(get_db_core
 
     result = results[0]
     result.status = True
-    tz = timezone("Asia/Tashkent")
     now = datetime.now(tz)
     result.updated_date = now.date()  # ✅ strftime emas!
     result.updated_time = now.time()  # ✅ strftime emas!
@@ -338,8 +377,6 @@ async def get_final_summary(user_id: int, db: DatabaseService1 = Depends(get_db_
 
     # 2. Fakultet va bloklar
     faculties = await db.get(Faculty, filters={"name": user.faculty})
-    if not faculties:
-        raise HTTPException(status_code=404, detail="Fakultet topilmadi")
     faculty = faculties[0]
 
     blocks = await db.get(FacultyBlock, filters={"faculty_val": faculty.faculty_val})
@@ -349,57 +386,32 @@ async def get_final_summary(user_id: int, db: DatabaseService1 = Depends(get_db_
     subjects = await db.get(Subject)
     subject_map = {int(s.subject_val): s.name for s in subjects}
 
-    # 4. Resultlarni yig‘ish
+    # 4. Natijalarni olish
     results = await db.get(Result, filters={"user_id": str(user_id)})
-    if not results:
-        raise HTTPException(status_code=404, detail="Natijalar topilmadi")
 
-    # 5. Bloklar bo‘yicha statistikani tayyorlaymiz
+    # 5. Bloklar bo‘yicha statistikani tayyorlash
     block_results = {
-        1: {
-            "block_number": 1,
-            "subject_name": None,
-            "correct_answers": 0,
-            "wrong_answers": 0,
-            "total_questions": 30,
-            "score": 0,
-            "max_score": 60
-        },
-        2: {
-            "block_number": 2,
-            "subject_name": None,
-            "correct_answers": 0,
-            "wrong_answers": 0,
-            "total_questions": 10,
-            "score": 0,
-            "max_score": 20
-        },
-        3: {
-            "block_number": 3,
-            "subject_name": None,
-            "correct_answers": 0,
-            "wrong_answers": 0,
-            "total_questions": 10,
-            "score": 0,
-            "max_score": 20
-        }
+        1: {"block_number": 1, "subject_name": None, "correct_answers": 0, "wrong_answers": 0,
+            "total_questions": 30, "score": 0, "max_score": 60, "time_spent": 0},
+        2: {"block_number": 2, "subject_name": None, "correct_answers": 0, "wrong_answers": 0,
+            "total_questions": 10, "score": 0, "max_score": 20, "time_spent": 0},
+        3: {"block_number": 3, "subject_name": None, "correct_answers": 0, "wrong_answers": 0,
+            "total_questions": 10, "score": 0, "max_score": 20, "time_spent": 0},
     }
 
     for res in results:
         sid = res.subject_id
-        block_number = block_map.get(sid)
-        if block_number not in block_results:
+        blk = block_map.get(sid)
+        if blk not in block_results:
             continue
 
-        correct = res.correct_answers
-        wrong = res.wrong_answers
-        subject_name = subject_map.get(sid, "Noma'lum fan")
-
-        block = block_results[block_number]
-        block["correct_answers"] += correct
-        block["wrong_answers"] += wrong
-        block["subject_name"] = subject_name
-        block["score"] = round((correct / block["total_questions"]) * block["max_score"], 2)
+        entry = block_results[blk]
+        entry["subject_name"] = subject_map.get(sid, "Noma'lum fan")
+        entry["correct_answers"] += res.correct_answers
+        entry["wrong_answers"] += res.wrong_answers
+        entry["score"] = round((res.correct_answers / entry["total_questions"]) * entry["max_score"], 2)
+        # **Yangi qo'shilgan**: qancha vaqt ketgan (daqiqa)
+        entry["time_spent"] = res.number
 
     total_score = sum(b["score"] for b in block_results.values())
 

@@ -162,13 +162,31 @@ subject_ = InlineKeyboardMarkup(inline_keyboard=[
         InlineKeyboardButton(text="1. Huquqshunoslik", callback_data='info_law_1')
     ],
     [
-        InlineKeyboardButton(text="2. Ona tili", callback_data='info_law_2')
+        InlineKeyboardButton(text="2. Matematika", callback_data='info_law_2')
     ],
     [
-        InlineKeyboardButton(text="3. Ingliz tili", callback_data='info_law_3')
+        InlineKeyboardButton(text="3. Psixologiya", callback_data='info_law_3')
     ],
     [
-        InlineKeyboardButton(text="4. Inson resurslarini boshqarish", callback_data='info_law_4')
+        InlineKeyboardButton(text="4. Huquqshunoslik rus tilida", callback_data='info_law_4')
+    ],
+    [
+        InlineKeyboardButton(text="5. Matematika rus tilida", callback_data='info_law_5')
+    ],
+    [
+        InlineKeyboardButton(text="6. Psixologiya rus tilida", callback_data='info_law_6')
+    ],
+    [
+        InlineKeyboardButton(text="7. Ingliz tili", callback_data='info_law_7')
+    ],
+    [
+        InlineKeyboardButton(text="8. Ona tili", callback_data='info_law_8')
+    ],
+    [
+        InlineKeyboardButton(text="9. Nemis tili", callback_data='info_law_9')
+    ],
+    [
+        InlineKeyboardButton(text="10. Fransuz tili", callback_data='info_law_10')
     ]
 ])
 
