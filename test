@@ -1,0 +1,416 @@
+MATH_TESTS = [
+    {
+        "question": "Во сколько раз длина лестницы на четвертый этаж здания больше длины лестницы на второй этаж? (Количество лестниц между этажами предполагается одинаковым)",
+        "formula": "",
+        "options": ["4", "3.5", "3", "2"],
+        "correct_answer": "2"
+    },
+    {
+        "question": "Во сколько раз длина лестницы на восьмой этаж здания больше длины лестницы на второй этаж? (Количество лестниц между этажами предполагается одинаковым)",
+        "formula": "",
+        "options": ["4", "5", "3.5", "7"],
+        "correct_answer": "4"
+    },
+    {
+        "question": "Расстояние между точками A и B составляет 500 метров, а расстояние между точками B и C составляет 300 метров. Каково расстояние между точками A и C?",
+        "formula": "",
+        "options": ["1300", "800", "700", "aniqlab bo‘lmaydi"],
+        "correct_answer": "800"
+    },
+    {
+        "question": "На сколько градусов поворачивается минутная стрелка часов за 9 минут?",
+        "formula": "",
+        "options": ["54°", "150°", "250°", "600°"],
+        "correct_answer": "54°"
+    },
+    {
+        "question": "На сколько градусов поворачивается минутная стрелка часов за 6 минут?",
+        "formula": "",
+        "options": ["36°", "240°", "360°", "600°"],
+        "correct_answer": "36°"
+    },
+    {
+        "question": "Сколько секунд составляет 2 часа 30 минут 3 секунды?",
+        "formula": "",
+        "options": ["8203", "9003", "9803", "8993"],
+        "correct_answer": "9003"
+    },
+    {
+        "question": "Сколько секунд составляет 1 час 160 минут 2 секунды?",
+        "formula": "",
+        "options": ["12202", "14202", "13202", "13102"],
+        "correct_answer": "13202"
+    },
+    {
+        "question": "Сколько секунд в двух сутках?",
+        "formula": "",
+        "options": ["136000", "232400", "126600" "172800"],
+        "correct_answer": "172800"
+    },
+    {
+        "question": "Сколько см² в 3 м² 1 дм² 5 см²?",
+        "formula": "",
+        "options": ["3015", "30015", "31015", "30105"],
+        "correct_answer": "30105"
+    },
+{
+        "question": "Сколько см² в 2 м² 3 дм² 4 см²?",
+        "formula": "",
+        "options": ["2034", "20244", "21034", "23004"],
+        "correct_answer": "23004"
+    },
+    {
+        "question": "Сколько квадратных плиток со стороной 20 см можно использовать для покрытия зала размером 24 м × 15 м?",
+        "formula": "",
+        "options": ["900", "18000", "9000", "1800"],
+        "correct_answer": "18000"
+    },
+    {
+        "question": "Квадрат со стороной 100 дм разделен на квадраты со стороной 5 см. Если эти квадраты расположить в виде полоски со стороной 10 см, то какова будет ее длина?",
+        "formula": "",
+        "options": ["100 m", "20 m", "200 m", "1 km"],
+        "correct_answer": "200 m"
+    },
+    {
+        "question": "Участок длиной 3,6 см на карте соответствует расстоянию 72 км. Если расстояние между двумя городами на карте составляет 12,6 см, то сколько км составляет расстояние между ними?",
+        "formula": "",
+        "options": ["240", "246", "250", "252"],
+        "correct_answer": "252"
+    },
+    {
+        "question": "Если расстояние между двумя городами составляет 200 км, сколько см будет это расстояние на карте масштаба 1:2000000?",
+        "formula": "",
+        "options": ["100", "10", "20", "40"],
+        "correct_answer": "10"
+    },
+    {
+        "question": "Расстояние между двумя городами на карте составляет 4,5 см. Если масштаб карты 1:2000000, каково реальное расстояние?",
+        "formula": "",
+        "options": ["0.9", "9", "90", "900"],
+        "correct_answer": "90"
+    },
+    {
+        "question": "Матери 50 лет, а дочери 28. Сколько лет назад дочь была вдвое моложе матери?",
+        "formula": "",
+        "options": ["5 год", "6 год", "8 год", "4 год"],
+        "correct_answer": "6 год"
+    },
+    {
+        "question": "Отцу 40 лет, а сыну 22 года. Через сколько лет отец будет в два раза старше сына?",
+        "formula": "",
+        "options": ["5 год", "7 год", "6 год", "4 год"],
+        "correct_answer": "4 год"
+    },
+    {
+        "question": "Бабушке 100 лет, а внучке 28 лет. Сколько лет назад внучка была в четыре раза моложе бабушки?",
+        "formula": "",
+        "options": ["8 год", "5 год", "4 год", "6 год"],
+        "correct_answer": "4 год"
+    },
+    {
+        "question": "Муравей проходит 5/6 м за 5 минут. Сколько метров он проходит за 1 минуту?",
+        "formula": "",
+        "options": ["5/6", "1/6", "31/6", "3"],
+        "correct_answer": "1/6"
+    },
+    {
+        "question": "Колесо делает 126/5 оборотов за 7 минут. Сколько раз оно делает оборотов за 1 минуту?",
+        "formula": "",
+        "options": ["18/5", "13/5", "12/5", "11/5"],
+        "correct_answer": "18/5"
+    },
+    {
+        "question": "Piyoda kishi 1 km yo‘lni 2/9 soat o‘tadi. U 3/4 km yo‘lni necha soatda o‘tadi?",
+        "formula": "",
+        "options": ["1/5", "1/6", "8/27", "1/4"],
+        "correct_answer": "1/6"
+    },
+    {
+        "question": "Toshbaqa 1 minutda 50 sm yo‘l bosadi. U 0.1 km masofani necha soatda bosib o‘tadi?",
+        "formula": "",
+        "options": ["3/2", "31/3", "31/2", "32/3"],
+        "correct_answer": "3/2"
+    },
+    {
+        "question": "G‘ulalar ustma-ust taxtacha shaklida 10 ta bo‘lsa, jami necha ta qatlam bo‘ladi?",
+        "formula": "",
+        "options": ["53", "54", "55", "56", "57"],
+        "correct_answer": "55"
+    },
+    {
+        "question": "Quvur paqirlar ust-ma-ust taxtacha shaklida 11 ta bo‘lsa, jami nechta quvur bo‘ladi? (11+10+…+1)",
+        "formula": "",
+        "options": ["66", "67", "68", "65"],
+        "correct_answer": "66"
+    },
+    {
+        "question": "Bir sutka davomida soat 1 da 1, 2 da 2, … , 12 da 12 marta sinov zarb uriladi. Jami necha marta?",
+        "formula": "",
+        "options": ["72", "78", "108", "144"],
+        "correct_answer": "78"
+    },
+    {
+        "question": "13 kishi bir-biri bilan qo‘l berib tushunish tug‘ilishida necha marotaba yuz beradi? (n(n−1)/2)",
+        "formula": "",
+        "options": ["169", "156", "78", "130"],
+        "correct_answer": "78"
+    },
+    {
+        "question": "120 ta o‘yinni tashkil qilgan futbol chempionatida nechta jamoa ishtirok etgan? (n(n−1)/2=120)",
+        "formula": "",
+        "options": ["12", "14", "15", "16"],
+        "correct_answer": "16"
+    },
+    {
+        "question": "Shaxmat musobaqasida har bir ishtirokchi qolganlari bilan 2 marta o‘ynadi va jami 462 ta o‘yin bo‘ldi. Necha kishi ishtirok etgan? (n(n−1)=462)",
+        "formula": "",
+        "options": ["18", "20", "22", "24"],
+        "correct_answer": "22"
+    }
+]
+MATH_TESTS = [
+    # 588
+    {
+        "question": "Quyidagi ifodani soddalashtiring:",
+        "formula": "-6 - 2\\cdot(2 - y) - 2y + 2",
+        "options": [
+            "8",
+            "-8 - 4y",
+            "8 - 4y",
+            "-8"
+        ],
+        "correct_answer": "-8"
+    },
+    # 589
+    {
+        "question": "Quyidagi ifodani soddalashtiring:",
+        "formula": "-8 - 2\\cdot(1 - b) - 2b + 1",
+        "options": [
+            "9",
+            "9 - 4b",
+            "9 + 4b",
+            "-9"
+        ],
+        "correct_answer": "-9"
+    },
+    # 590
+    {
+        "question": "Agar $a + b + 3 = 10$ bo‘lsa, quyidagi ifodaning qiymatini toping:",
+        "formula": "3.8a + 7.7 + 1.7b + 2.5a + 11.2 + 4.6b",
+        "options": [
+            "53",
+            "58",
+            "72",
+            "63"
+        ],
+        "correct_answer": "63"
+    },
+    # 591
+    {
+        "question": "R = $\\frac{1}{3}x - \\frac{1}{3}y - (x + 2y)$ va Q = $\\frac{1}{3}x + \\frac{1}{3}y - (x - y)$ ko‘phadlar ayrmasini toping:",
+        "formula": "",
+        "options": [
+            "-\\tfrac{11}{3}y",
+            "4y",
+            "-4y",
+            "-\\tfrac{13}{3}y"
+        ],
+        "correct_answer": "-\\tfrac{11}{3}y"
+    },
+    # 592
+    {
+        "question": "Quyidagi ifodani soddalashtiring:",
+        "formula": "2\\tfrac{1}{2}\\cdot\\bigl(\\tfrac{4}{5}x + 2\\bigr) - 2\\tfrac{1}{3}\\cdot\\bigl(\\tfrac{3}{7}x - 6\\bigr)",
+        "options": [
+            "19",
+            "x - 9",
+            "x + 19",
+            "x + 20",
+        ],
+        "correct_answer": "x + 19"
+    },
+    # 593
+    {
+        "question": "Quyidagi ifodani soddalashtiring:",
+        "formula": "2\\tfrac{1}{3}\\cdot\\bigl(\\tfrac{6}{7}m + 3\\bigr) - 1\\tfrac{2}{3}\\cdot\\bigl(\\tfrac{3}{5}m - 3\\bigr)",
+        "options": [
+            "m - 2",
+            "2",
+            "m + 12",
+            "m + 4"
+        ],
+        "correct_answer": "m + 12"
+    },
+]
+BIOLOGIYA = [
+    {
+        "question": "Quyidagi ifodani soddalashtiring",
+        "formula": "a(b - c) + b(c - a) - c(b - a)",
+        "options": ["-2ac", "2ab", "0",  "2bc – 2ac"],
+        "correct_answer": "0"
+    },
+    {
+        "question": "Quyidagi ifodani soddalashtiring",
+        "formula": "(2a - b)^2 - (2a + b)^2",
+        "options": [ "-2b^2", "-8ab", "-4ab + 2b^2", "2b^2"],
+        "correct_answer": "-8ab"
+    },
+    {
+        "question": "Quyidagi ifodani soddalashtiring",
+        "formula": "(2a - b)^2 + (2a + b)^2",
+        "options": ["-2b^2", "-8ab", "-4ab + 2b^2", "8a^2 + 2b^2"],
+        "correct_answer": "8a^2 + 2b^2"
+    },
+    {
+        "question": "Quyidagi ifodani soddalashtiring",
+        "formula": "(a - 3b)^2 - (a + b)^2",
+        "options": ["8b^2 – 8ab", "2b^2 - 8ab", "-8b^2", "2b^2 – 4ab"],
+        "correct_answer": "8b^2 – 8ab"
+    },
+    {
+        "question": "Quyidagi ifodani soddalashtiring",
+        "formula": "(a - 3b)^2 + (3a + b)^2 ",
+        "options": ["8b^2", "2b^2 - 8ab", "10a^2 + 10b^2", "2b^2 – 4ab"],
+        "correct_answer": "10a^2 + 10b^2"
+    },
+    {
+        "question": "Quyidagi ifodani soddalashtiring",
+        "formula": "(1 - 2a)^2 + (1 + 2a)(2a - 1)",
+        "options": ["8a^2 – 4a", "-2a + 2", "4a^2 – 2a", "8a^2"],
+        "correct_answer": "8a^2 – 4a"
+    },
+    {
+        "question": "Quyidagi ifodani soddalashtiring",
+        "formula": "(1 - 2a)^2 - (1 + 2a)(2a - 1)",
+        "options": ["-4a + 2", "-2a + 2", "4a^2 – 2a", "8a^2"],
+        "correct_answer": "-4a + 2"
+    },
+    {
+        "question": "Quyidagi ifodani ko‘phadning standart shakliga keltiring",
+        "formula": "2x(x - 1) - (2x - 1)(x + 1)",
+        "options": ["4x^2 – 1", "2x^2 – 3x", "3x + 1", "-3x + 1"],
+        "correct_answer": "-3x + 1"
+    },
+    {
+        "question": "Quyidagi ifodani ko‘phadning standart shakliga keltiring",
+        "formula": "(4x - 3)^2 - x(4x + 1)",
+        "options": ["12x^2 - 25x + 9", "4x^2 - 13x", "8x^2 – x + 7", "12x^2 - 23x + 9"],
+        "correct_answer": "12x^2 - 25x + 9"
+    },
+    {
+        "question": "Quyidagi ifodani ko‘phadning standart shakliga keltiring",
+        "formula": "(x - 1)(2 - x) + (2x - 3)^2",
+        "options": ["5x^2 + 9x - 7", "3x^2 - 8", "3x^2 - 9x + 7", "12x + 4 - x^2"],
+        "correct_answer": "3x^2 - 9x + 7"
+    },
+    {
+        "question": "Quyidagi ifodani soddalashtiring",
+        "formula": "144 - (x + 7)^2 - (5 - x)(19 + x)",
+        "options": ["0", "50", "140", "90"],
+        "correct_answer": "0"
+    },
+    {
+        "question": "Quyidagi ifodani soddalashtiring",
+        "formula": "(a + b)(a - b + 1) – (a - b)(a + b – 1)",
+        "options": ["2b", "2a - 2b", "2a", "2a^2 + 2b^2"],
+        "correct_answer": "2a"
+    },
+    {
+        "question": "Quyidagi ifodani ko‘phad shaklida tasvirlang",
+        "formula": "(a + 3b)(a + b + 2) – (a + b)(a + 3b + 2)",
+        "options": ["2a - b", "a - 2b", "4a + 2b", "4b"],
+        "correct_answer": "4b"
+    },
+    {
+        "question": "Quyidagi ifodani ko‘phad shaklida tasvirlang",
+        "formula": "(a + 3b)(a + b - 1) – (a + b)(a + 3b - 1)",
+        "options": ["2a - b", "-2b", "4a + 2b", "4b"],
+        "correct_answer": "-2b"
+    },
+    {
+        "question": "Quyidagi kvadrat uchhadni chiziqli ko‘paytiruvchilarga ajrating",
+        "formula": "x^2 - x - 2",
+        "options": ["(x - 1)(x + 2)", "(x + 1)(x - 2)", "(x - 1)(x - 2)", "(x + 1)(x + 2)"],
+        "correct_answer": "(x - 2)(x + 1)"
+    },
+    {
+        "question": "Quyidagi kvadrat uchhadni chiziqli ko‘paytiruvchilarga ajrating",
+        "formula": "x^2 - 3x + 2",
+        "options": ["(x - 1)(x + 2)", "(x - 2)(x + 1)", "(x - 1)(x - 2)", "(x + 1)(x + 2)"],
+        "correct_answer": "(x - 1)(x - 2)"
+    },
+    {
+        "question": "Quyidagi kvadrat uchhadni chiziqli ko‘paytiruvchilarga ajrating",
+        "formula": "x^2 + x - 2",
+        "options": [ "(x - 1)(x + 2)", "(1 - x)(x + 2)", "(x + 1)(x - 2)", "(x + 1)(x + 2)"],
+        "correct_answer": "(x - 1)(x + 2)"
+    },
+    {
+        "question": "Quyidagi ifodanini ko‘paytiruvchilarga ajrating",
+        "formula": "1 - (2x - 3)^2",
+        "options": ["3(x - 2)(x + 1)", "4(2 - x)(x - 1)", "2(1 - x)(x - 2)", "(2 - 3x)(x - 1)"],
+        "correct_answer": "4(x - 2)(x - 1)"
+    }
+]
+MATH_TESTS = [
+    {
+        "question": "Quyidagi tenglamani yeching",
+        "formula": "0.7\\cdot(6y-5) = 0.4\\cdot(y-3) - 1.16",
+        "options": ["0.3", "-3", "-0.3", "2"],
+        "correct_answer": "0.3"
+    },
+    {
+        "question": "Quyidagi tenglamani yeching",
+        "formula": "0.9\\cdot(4x-2) = 0.5\\cdot(3x-4) + 4.4",
+        "options": ["1.2", "2.5", "-3", "2"],
+        "correct_answer": "2"
+    },
+    {
+        "question": "Quyidagi tenglamani yeching",
+        "formula": "0.2\\cdot(5y-2) = 0.3\\cdot(2y-1) - 0.9",
+        "options": ["2", "0.2", "-2", "-1.2"],
+        "correct_answer": "-2"
+    },
+    {
+        "question": "Quyidagi tenglamani yeching",
+        "formula": "2.8x - 3\\cdot(2x-1) = 2.8 - 3.19x",
+        "options": ["-20", "20", "-2", "200"],
+        "correct_answer": "20"
+    },
+    {
+        "question": "Quyidagi tenglamani yeching",
+        "formula": "5.6 - 7\\cdot(0.8x+1) = 14 - 5.32x",
+        "options": ["5.5", "55", "-55", "-5.5"],
+        "correct_answer": "-55"
+    },
+    {
+        "question": "Quyidagi tenglamani yeching",
+        "formula": "4.5 - 1.6\\cdot(5x-3) = 1.2\\cdot(4x-1) - 15.1",
+        "options": ["20", "2", "0.2", "0.5"],
+        "correct_answer": "2"
+    },
+    {
+        "question": "Quyidagi tenglamani yeching",
+        "formula": "\\frac{6,9}{4,6} = \\frac{x}{5,4}",
+        "options": ["7,1", "7,7", "8,4", "9,2"],
+        "correct_answer": "7,7"
+    },
+    {
+        "question": "Quyidagi tenglamani yeching",
+        "formula": "\\frac{3,5}{x} = \\frac{0,8}{2,4}",
+        "options": ["10,5", "13,5", "7,8", "11,5"],
+        "correct_answer": "10,5"
+    },
+    {
+        "question": "Quyidagi tenglamani yeching",
+        "formula": "\\frac{5,4}{2,4} = \\frac{x}{1,6}",
+        "options": ["3,6", "2,8", "4,6", "3,9"],
+        "correct_answer": "3,6"
+    },
+    {
+        "question": "Quyidagi tenglamani yeching",
+        "formula": "\\frac{0,25}{1,4} = \\frac{0,75}{x}",
+        "options": ["3,6", "2,4", "4,2", "5,2"],
+        "correct_answer": "4,2"
+    },
+]

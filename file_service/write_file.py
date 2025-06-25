@@ -1,10 +1,73 @@
-from openpyxl import load_workbook
 from file_service.test_file.test_file_path import get_test_file_path, join_test_file
-from file_service.file_path import get_file_path
 from utils.db_api.core import DatabaseService1, Question
+from file_service.file_path import get_file_path
+from file_service.hisobot import get_report_file_path
 from LoggingService import LoggerService
+from openpyxl import load_workbook
+from docx2pdf import convert
+from datetime import datetime
+from os import remove
+from os.path import exists
+import subprocess
+from os.path import dirname
 
 db = DatabaseService1(logger=LoggerService())
+YO_NALISHLAR_QATORLARI = {
+    "Inson resurslarini boshqarish": 4,
+    "Hayot faoliyati xavfsizligi": 5,
+    "Yurisprudensiya": 6,
+    "Ijtimoiy ish": 7,
+    "Menejment": 8,
+    "Mehnat muhofazasi va texnika xavfsizligi": 9,
+    "Psixologiya": 10,
+    "Bugalteriya hisobi": 11,
+    "Metrologiya va standartlashtirish": 12,
+    "Iqtisodiyot": 13
+}
+
+
+async def create_report_file(data: dict):
+    # try:
+
+    path = await get_file_path("report.xlsx")
+    workbook = load_workbook(path)
+    sheet = workbook.active
+    total = 0
+
+    for yo_nalish, qiymat in data.items():
+        if yo_nalish in YO_NALISHLAR_QATORLARI:
+            row = YO_NALISHLAR_QATORLARI[yo_nalish]
+            cell = f"D{row}"
+            sheet[cell] = qiymat
+            total += qiymat
+        else:
+            print(f"⚠️ Noto‘g‘ri yo‘nalish nomi: {yo_nalish}")
+    now = datetime.now()
+    formatted_time = now.strftime("%d-%m-%Y")
+    sheet["E2"] = f"{formatted_time} holati bo'yicha"
+    new_file_name = f"{formatted_time}_hisobot.xlsx"
+    new_file_path = await get_report_file_path(new_file_name)
+
+    # 5. Saqlaymiz
+    workbook.save(new_file_path)
+    workbook.close()
+    # await convert_pdf(source_path=new_file_name, target_path=f'{formatted_time}_hisobot')
+    return True
+
+
+
+async def convert_pdf(source_path, target_path):
+    source_path1 = await get_report_file_path(source_path)
+    target_dir = dirname(source_path1)
+
+    try:
+        subprocess.run([
+            'libreoffice', '--headless', '--convert-to', 'pdf', source_path1, '--outdir', target_dir
+        ], check=True)
+
+        print("✅ PDF muvaffaqiyatli yaratildi.")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ LibreOffice orqali PDFga o‘tkazishda xatolik: {e}")
 
 
 async def write_qabul(row: list):
@@ -20,6 +83,7 @@ async def write_qabul(row: list):
     except Exception as e:
         print(f"❌ Excel yozishda xatolik: {e}")
         return False
+
 
 async def read_file(file_path: str, subject_id: int) -> bool:
     """
@@ -62,11 +126,11 @@ async def read_file(file_path: str, subject_id: int) -> bool:
                 continue
             print(row[0], row[1], row[2], row[3], row[4])
 
-            text    = str(row[0] or "").strip()
-            opt1    = str(row[1] or "").strip()
-            opt2    = str(row[2] or "").strip()
-            opt3    = str(row[3] or "").strip()
-            opt4    = str(row[4] or "").strip()
+            text = str(row[0] or "").strip()
+            opt1 = str(row[1] or "").strip()
+            opt2 = str(row[2] or "").strip()
+            opt3 = str(row[3] or "").strip()
+            opt4 = str(row[4] or "").strip()
             # Misolda to‘g‘ri javob 3-ustunda ekan: row[2]
             correct = opt1
 

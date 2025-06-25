@@ -1,0 +1,10 @@
+version: 2
+authtoken: 2OB2VDLPFH4az2vC3oqJ5zGXgpH_7RSuLu2PHeVuRkvLTf4Sk
+region: us
+tunnels:
+  app:
+    proto: http
+    addr: 8002
+    host_header: rewrite
+    hostname: swine-viable-luckily.ngrok-free.app
+    inspect: true

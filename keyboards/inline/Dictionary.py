@@ -35,7 +35,7 @@ list_faculty = ["faculty0", "faculty1", "faculty2", "faculty3", "faculty4", "fac
 # await db.add(FacultyBlock(faculty_val='8', subject_val='8', block_number=2))
 # await db.add(FacultyBlock(faculty_val='8', subject_val='7', block_number=3))
 # await db.add(FacultyBlock(faculty_val='9', subject_val='2', block_number=1))
-# await db.add(FacultyBlock(faculty_val='9', subject_val='8', block_number=2))
+# await db.add(FacultyBlock(faculty_val='9', subject_val='11', block_number=2))
 # await db.add(FacultyBlock(faculty_val='9', subject_val='7', block_number=3))
 # await db.add(FacultyBlock(faculty_val='2', subject_val='2', block_number=1))
 # await db.add(Subject(name="Huquqshunoslik", subject_val='1', language="O'zbek tili"))
@@ -48,6 +48,9 @@ list_faculty = ["faculty0", "faculty1", "faculty2", "faculty3", "faculty4", "fac
 # await db.add(Subject(name="Ona tili", subject_val='8', language="O'zbek tili"))
 # await db.add(Subject(name="Nemis tili", subject_val='9', language="O'zbek tili"))
 # await db.add(Subject(name="Fransuz tili", subject_val='10', language="O'zbek tili"))
+# await db.add(Subject(name="Fizika", subject_val='11', language="O'zbek tili"))
+# await db.add(Subject(name="Mantiqiy matematika", subject_val='12', language="O'zbek tili"))
+# await db.add(Subject(name="Логическая математика", subject_val='13', language="Rus tili"))
 
 faculty_file_map2 = {
     "faculty0": 'Mehnat muhofazasi va texnika xavfsizligi',

@@ -14,3 +14,5 @@ IP = environ.get("IP")  # Xosting ip manzili
 ENV = environ.get("ENV")
 engine = create_engine(environ.get("DATABASE_URL"))
 Base = declarative_base()
+CORS_ORIGINS = environ.get("CORS_ORIGINS")
+SESSION_SECRET = environ.get("SESSION_SECRET")
