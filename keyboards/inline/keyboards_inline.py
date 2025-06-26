@@ -120,8 +120,7 @@ choose_language = InlineKeyboardMarkup(inline_keyboard=[
 choose_education_status = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text="✅ Kunduzgi ta'lim", callback_data="Kunduzgi"),
-            InlineKeyboardButton(text="📘 Sirtqi ta'lim", callback_data="Sirtqi")
+            InlineKeyboardButton(text="✅ Kunduzgi ta'lim", callback_data="Kunduzgi")
         ]
     ]
 )

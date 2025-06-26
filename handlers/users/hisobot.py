@@ -13,9 +13,11 @@ db = DatabaseService1()
 async def hisobot(message: types.Message, state: FSMContext):
     now = datetime.now()
     info = await db.get(User, filters={'talim_turi': 'Kunduzgi'})
-    # print(info)
+    day_info = await db.get(User, filters={'talim_turi': 'Kunduzgi', 'created_date': f'2025-06-25'})
+    print(day_info)
     faculty_count = Counter([user.faculty for user in info if user.faculty])
-    await create_report_file(faculty_count)
+    day_faculty_count = Counter([user.faculty for user in day_info if user.faculty])
+    await create_report_file(jami_data=faculty_count, kunlik_data=day_faculty_count)
     print(faculty_count.get("Yurisprudensiya"), type(faculty_count))
     # Natijani shakllantirish
     report = "📊 *Fakultetlar bo‘yicha ro‘yxatdan o‘tganlar soni:*\n\n"

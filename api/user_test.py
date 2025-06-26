@@ -152,11 +152,8 @@ async def start_real_test(user_id: int, db: DatabaseService1 = Depends(get_db_co
         raise HTTPException(status_code=400, detail="Noto‘g‘ri blok raqami")
 
     # 6) Agar yakunlanmagan Result mavjud bo‘lsa — davom etamiz
-    existing: List[Result] = await db.get(Result, filters={
-        "user_id": str(user_id),
-        "subject_id": subj["subject_id"],
-        "status": False
-    })
+    existing: List[Result] = await db.get(Result, filters={"user_id": str(user_id), "subject_id": subj["subject_id"],
+                                                           "status": False})
     if existing:
         res = existing[0]
         q_ids = loads(res.question_ids)
@@ -244,6 +241,8 @@ async def start_real_test(user_id: int, db: DatabaseService1 = Depends(get_db_co
         "start_time": start_aware.isoformat(),
         "questions": payload_qs
     }
+
+
 # ✅ YANGILANGAN submit-answer API (xato va to'g'ri javoblar aniqlik bilan hisoblanadi)
 @router.post("/submit-answer")
 async def submit_answer(data: Dict[str, Any], db: DatabaseService1 = Depends(get_db_core)):
@@ -417,5 +416,6 @@ async def get_final_summary(user_id: int, db: DatabaseService1 = Depends(get_db_
 
     return {
         "blocks": [block_results[1], block_results[2], block_results[3]],
-        "total_score": total_score
+        "total_score": total_score,
+        "full_name": user.name  # Ism familiya
     }

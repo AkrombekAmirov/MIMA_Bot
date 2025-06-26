@@ -26,25 +26,28 @@ YO_NALISHLAR_QATORLARI = {
 }
 
 
-async def create_report_file(data: dict):
+async def create_report_file(jami_data: dict, kunlik_data: dict):
     # try:
 
     path = await get_file_path("report.xlsx")
     workbook = load_workbook(path)
     sheet = workbook.active
-    total = 0
+    total_daily = 0
+    total_all = 0
 
-    for yo_nalish, qiymat in data.items():
-        if yo_nalish in YO_NALISHLAR_QATORLARI:
-            row = YO_NALISHLAR_QATORLARI[yo_nalish]
-            cell = f"D{row}"
-            sheet[cell] = qiymat
-            total += qiymat
-        else:
-            print(f"⚠️ Noto‘g‘ri yo‘nalish nomi: {yo_nalish}")
+    for yo_nalish, row in YO_NALISHLAR_QATORLARI.items():
+        # Jami hujjat topshirganlar → F ustun
+        jami_val = jami_data.get(yo_nalish, 0)
+        sheet[f"E{row}"] = jami_val
+        total_all += jami_val
+
+        # Kunlik topshirganlar → E ustun
+        kunlik_val = kunlik_data.get(yo_nalish, 0)
+        sheet[f"D{row}"] = kunlik_val
+        total_daily += kunlik_val
     now = datetime.now()
     formatted_time = now.strftime("%d-%m-%Y")
-    sheet["E2"] = f"{formatted_time} holati bo'yicha"
+    sheet["F2"] = f"{formatted_time} holati bo'yicha"
     new_file_name = f"{formatted_time}_hisobot.xlsx"
     new_file_path = await get_report_file_path(new_file_name)
 
