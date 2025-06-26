@@ -1,32 +1,61 @@
-from keyboards.inline import choose_education_status_info, choose_visitor
+from file_service import get_report_file_path, create_report_file
+from utils.db_api.core import DatabaseService1, User
 from aiogram.dispatcher import FSMContext
-from file_service import get_file_path, create_report_file
 from datetime import datetime, time
 from collections import Counter
 from aiogram import types
 from loader import dp
 import os
-from utils.db_api.core import DatabaseService1, User
+
+
 db = DatabaseService1()
 
+
 @dp.message_handler(commands=["hisobot"])
-async def hisobot(message: types.Message, state: FSMContext):
+async def hisobot_handler(message: types.Message, state: FSMContext):
     now = datetime.now()
-    info = await db.get(User, filters={'talim_turi': 'Kunduzgi'})
-    day_info = await db.get(User, filters={'talim_turi': 'Kunduzgi', 'created_date': f'2025-06-25'})
-    print(day_info)
-    faculty_count = Counter([user.faculty for user in info if user.faculty])
-    day_faculty_count = Counter([user.faculty for user in day_info if user.faculty])
-    await create_report_file(jami_data=faculty_count, kunlik_data=day_faculty_count)
-    print(faculty_count.get("Yurisprudensiya"), type(faculty_count))
-    # Natijani shakllantirish
-    report = "📊 *Fakultetlar bo‘yicha ro‘yxatdan o‘tganlar soni:*\n\n"
-    for faculty, count in faculty_count.items():
-        report += f"• {faculty} — {count} ta\n"
-    print(report, type(report))
+    today_str = now.strftime("%Y-%m-%d")
+    formatted_time = now.strftime("%d-%m-%Y")
 
-    await message.answer(report, parse_mode="Markdown")
-    if now.time() >= time(17, 0):
+    # 1. Ma'lumotlarni olish (jami va bugungi)
+    all_users = await db.get(User, filters={'talim_turi': 'Kunduzgi'})
+    daily_users = await db.get(User, filters={'talim_turi': 'Kunduzgi', 'created_date': today_str})
 
-        await message.answer("Yakunlash vaqti!")
-        return
+    # 2. Fakultet bo‘yicha statistikalar
+    total_faculty = Counter(user.faculty for user in all_users if user.faculty)
+    daily_faculty = Counter(user.faculty for user in daily_users if user.faculty)
+
+    # 3. Excel hisobotini yaratish
+    await create_report_file(jami_data=total_faculty, kunlik_data=daily_faculty)
+
+    # 4. Hisobot xabari (jami)
+    total_text = "📊 *Fakultetlar bo‘yicha jami ro‘yxatdan o‘tganlar:*\n\n"
+    total_count = 0
+    for faculty, count in total_faculty.items():
+        total_text += f"• {faculty} — {count} ta\n"
+        total_count += count
+    total_text += f"\n🔢 *Umumiy soni:* {total_count} ta"
+
+    # 5. Hisobot xabari (kunlik)
+    daily_text = f"📆 *{formatted_time} kuni ro‘yxatdan o‘tganlar:*\n\n"
+    if daily_faculty:
+        for faculty, count in daily_faculty.items():
+            daily_text += f"• {faculty} — {count} ta\n"
+    else:
+        daily_text += "Bugun hujjat topshirganlar yo‘q."
+
+    # 6. Javoblarni yuborish
+    await message.answer(total_text, parse_mode="Markdown")
+    await message.answer(daily_text, parse_mode="Markdown")
+
+    # 7. Excel faylni yuborish (soat 17:00 dan keyin)
+    report_file_name = f"{formatted_time}_hisobot.xlsx"
+    report_file_path = await get_report_file_path(report_file_name)
+
+    if report_file_path and os.path.exists(report_file_path):
+        await message.answer_document(
+            document=types.InputFile(report_file_path),
+            caption=f"📎 {formatted_time} kuni uchun hisobot fayli"
+        )
+    else:
+        await message.answer("⚠️ Excel hisobot fayli topilmadi.")
