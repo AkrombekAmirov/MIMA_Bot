@@ -272,6 +272,8 @@ class BotHandler:
                 "talim_tili": data.get("leanguage"),
                 "jshir_id": data.get("jshir"),
                 "phone_number": data.get("phone_numbers"),
+                "created_date": datetime.now().strftime("%Y-%m-%d"),
+                "created_time": datetime.now().strftime("%H:%M:%S")
             }
             await db.update_user_by_telegram_id(telegram_id=str(call.from_user.id), updates=updates)
             await write_qabul([
