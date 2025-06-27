@@ -12,6 +12,7 @@ alembic.ini
 docker-compose.yml
 Dockerfile
 Backup_DB
+file_service/hisobot
 
 # Distribution / packaging
 .Python
