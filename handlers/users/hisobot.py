@@ -4,8 +4,8 @@ from aiogram.dispatcher import FSMContext
 from datetime import datetime, time
 from collections import Counter
 from aiogram import types
-from loader import dp
-import os
+from loader import dp, bot
+import os, asyncio, logging
 
 
 db = DatabaseService1()
@@ -57,5 +57,52 @@ async def hisobot_handler(message: types.Message, state: FSMContext):
             document=types.InputFile(report_file_path),
             caption=f"📎 {formatted_time} kuni uchun hisobot fayli"
         )
+        await message.answer("Buyruqni yuboring! /hisobot")
     else:
         await message.answer("⚠️ Excel hisobot fayli topilmadi.")
+
+DEFAULT_BROADCAST_TEXT = (
+    "Assalomu alaykum hurmatli abituriyent!\n\n"
+    "Mehnat va ijtimoiy munosabatlar akademiyasini tanlaganingiz uchun rahmat!\n\n"
+    "📢 Mehnat va ijtimoiy munosabatlar akademiyasida 2025–2026-o‘quv yiliga kirish test imtihonlari "
+    "2025-yil 2-iyul sanasidan boshlanishini rasman e’lon qilamiz!\n\n"
+    "🕘 Imtihonlar har kuni dushanbadan jumagacha, soat 09:00 dan 16:00 gacha "
+    "Akademiya o‘quv binosida bo‘lib o‘tadi."
+)
+
+# ✅ Asinxron mass-messaging funksiyasi
+async def send_message_to_users(users: list[User], text: str):
+    success = 0
+    failed = 0
+
+    async def send_one(user: User):
+        nonlocal success, failed
+        try:
+            await bot.send_message(chat_id=int(user.telegram_id), text=text)
+            success += 1
+        except Exception as e:
+            logging.warning(f"⚠️ {user.telegram_id} raqamiga yuborishda xatolik: {e}")
+            failed += 1
+
+    # Parallel yuborish
+    await asyncio.gather(*(send_one(user) for user in users))
+    return success, failed
+
+# ✅ Admin tomonidan yuboriladigan buyruq
+@dp.message_handler(commands=["sendmessage"])
+async def send_message_handler(message: types.Message, state: FSMContext):
+    # 1. Foydalanuvchilarni olish
+    users = await db.get(User)
+
+    # 2. Jarayonni boshlanishi haqida adminni xabardor qilish
+    await message.answer(f"📨 {len(users)} ta abituriyentga xabar yuborilmoqda...")
+
+    # 3. Xabar yuborish
+    success, failed = await send_message_to_users(users, DEFAULT_BROADCAST_TEXT)
+
+    # 4. Natijani chiqarish
+    await message.answer(
+        f"✅ Yuborish yakunlandi!\n"
+        f"🟢 Muvaffaqiyatli: {success}\n"
+        f"🔴 Xatolik: {failed}"
+    )
