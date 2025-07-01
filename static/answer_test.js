@@ -26,7 +26,7 @@ async function fetchQuestions() {
 
   ({ block_number: blockNumber, subject_id: subjectId } = data);
   // 2) Matematika fani ekanini tekshiramiz (misol uchun subject_name orqali)
-  isMathSubject = data.subject_name.trim().toLowerCase() === "matematika";
+  isMathSubject = data.subject_name.trim().toLowerCase().includes("matematika");
 
   // 3) Sarlavha
   const title = document.createElement("h2");

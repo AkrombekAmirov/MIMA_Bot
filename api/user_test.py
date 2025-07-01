@@ -60,13 +60,15 @@ async def start_test(user_id: int, db: DatabaseService1 = Depends(get_db_core)):
     user = users[0]
 
     # 2) Fakultet aniqlash
-    faculties = await db.get(Faculty, filters={"name": user.faculty})
+    faculties = await db.get(Faculty, filters={"name": user.faculty, "talim_tili": user.talim_tili})
+    print(faculties)
     if not faculties:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fakultet topilmadi")
     faculty = faculties[0]
 
     # 3) Blok bo‘yicha FacultyBlocklarni olish
     blocks = await db.get(FacultyBlock, filters={"faculty_val": faculty.faculty_val})
+    print(blocks)
     if not blocks:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="Fakultet uchun bloklar topilmadi")
@@ -78,10 +80,10 @@ async def start_test(user_id: int, db: DatabaseService1 = Depends(get_db_core)):
         subs = await db.get(
             Subject,
             filters={
-                "subject_val": block.subject_val,
-                "language": chosen_lang
+                "subject_val": block.subject_val
             }
         )
+        print(subs)
         if not subs:
             # Tilga mos fan topilmasa, xatolik qaytaramiz
             raise HTTPException(
@@ -117,10 +119,11 @@ async def start_real_test(user_id: int, db: DatabaseService1 = Depends(get_db_co
         current_block = 1
 
     # 3) Fakultet va bloklar
-    facs = await db.get(Faculty, filters={"name": user.faculty})
+    facs = await db.get(Faculty, filters={"name": user.faculty, "talim_tili": user.talim_tili})
     if not facs:
         raise HTTPException(status_code=404, detail="Fakultet topilmadi")
     faculty = facs[0]
+    print(faculty, "\n", facs)
 
     blocks = await db.get(FacultyBlock, filters={"faculty_val": faculty.faculty_val})
     if not blocks:
@@ -132,8 +135,7 @@ async def start_real_test(user_id: int, db: DatabaseService1 = Depends(get_db_co
         subs = await db.get(
             Subject,
             filters={
-                "subject_val": blk.subject_val,
-                "language": user.talim_tili
+                "subject_val": blk.subject_val
             }
         )
         if subs:

@@ -98,6 +98,7 @@ class Faculty(BaseModel, table=True):
     __tablename__ = 'faculties'
     name: str = Field(..., description="Fakultet nomi")
     faculty_val: str = Field(..., description="Fakultet qiymati")
+    talim_tili: str = Field(..., description="Fakultet tili")
 
 
 class FacultyBlock(SQLModel, table=True):
