@@ -12,7 +12,9 @@ db = DatabaseService1(logger=LoggerService())
 
 @dp.message_handler(CommandStart())
 async def bot_start(message: Message):
-    if str(message.from_user.id) in ['685098494', '1709066039', '5506760681']:
+    if str(message.from_user.id) in '':
+        await message.answer("Buyruqni yuboring! /hisobot")
+    elif str(message.from_user.id) in ['685098494', '1709066039', '5506760681']:
         await message.answer("Buyruqni yuboring! /hisobot")
     elif str(message.from_user.id) == str(ADMIN_M1):
         await message.answer("Xizmat turini tanlang", reply_markup=choose_admin_1)

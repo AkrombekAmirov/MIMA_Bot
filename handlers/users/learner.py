@@ -300,7 +300,7 @@ class BotHandler:
                                       f"🎓 Shakli: <b>{data.get('education_status')}</b>\n"
                                       f"🌐 Tili: <b>{data.get('leanguage')}</b>")
             await dp.bot.send_document(ADMIN_M2, types.InputFile(await get_file_path(name="qabul.xlsx")))
-            await call.message.answer("✅ Ma’lumotlar saqlandi!", reply_markup=choose_visitor)
+            await call.message.answer("✅ Ma’lumotlar saqlandi! \n", reply_markup=choose_visitor)
         else:
             await state.reset_state(with_data=True)
             await call.message.answer("❌ Ma'lumotlar bekor qilindi.\nQaytadan urinib ko'ring", reply_markup=choose_visitor)

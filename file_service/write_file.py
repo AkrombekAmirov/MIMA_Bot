@@ -1,15 +1,12 @@
 from file_service.test_file.test_file_path import get_test_file_path, join_test_file
 from utils.db_api.core import DatabaseService1, Question
-from file_service.file_path import get_file_path
 from file_service.hisobot import get_report_file_path
+from file_service.file_path import get_file_path
 from LoggingService import LoggerService
 from openpyxl import load_workbook
-from docx2pdf import convert
 from datetime import datetime
-from os import remove
-from os.path import exists
-import subprocess
 from os.path import dirname
+import subprocess
 
 db = DatabaseService1(logger=LoggerService())
 YO_NALISHLAR_QATORLARI = {
@@ -26,37 +23,39 @@ YO_NALISHLAR_QATORLARI = {
 }
 
 
-async def create_report_file(jami_data: dict, kunlik_data: dict):
-    # try:
-
+async def create_report_file(jami_data: dict, kunlik_data: dict, exam_data: dict):
     path = await get_file_path("report.xlsx")
     workbook = load_workbook(path)
     sheet = workbook.active
     total_daily = 0
     total_all = 0
-
+    total_exam = 0
     for yo_nalish, row in YO_NALISHLAR_QATORLARI.items():
-        # Jami hujjat topshirganlar → F ustun
+        # Jami hujjat topshirganlar → E ustun
         jami_val = jami_data.get(yo_nalish, 0)
         sheet[f"E{row}"] = jami_val
         total_all += jami_val
 
-        # Kunlik topshirganlar → E ustun
+        # Kunlik topshirganlar → D ustun
         kunlik_val = kunlik_data.get(yo_nalish, 0)
         sheet[f"D{row}"] = kunlik_val
         total_daily += kunlik_val
+
+        # Imtihon topshirganlar → F ustun
+        exam_val = exam_data.get(yo_nalish, 0)
+        sheet[f"F{row}"] = exam_val
+        total_exam += exam_val
+
     now = datetime.now()
     formatted_time = now.strftime("%d-%m-%Y")
     sheet["F2"] = f"{formatted_time} holati bo'yicha"
+
     new_file_name = f"{formatted_time}_hisobot.xlsx"
     new_file_path = await get_report_file_path(new_file_name)
 
-    # 5. Saqlaymiz
     workbook.save(new_file_path)
     workbook.close()
-    # await convert_pdf(source_path=new_file_name, target_path=f'{formatted_time}_hisobot')
     return True
-
 
 
 async def convert_pdf(source_path, target_path):

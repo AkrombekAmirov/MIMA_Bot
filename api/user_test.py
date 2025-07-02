@@ -7,6 +7,7 @@ from typing import List, Dict, Any
 from pytz import timezone, utc
 from json import dumps, loads
 from datetime import datetime
+from aiogram import bot
 
 db = DatabaseService1(logger=LoggerService())
 

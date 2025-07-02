@@ -20,13 +20,15 @@ async def hisobot_handler(message: types.Message, state: FSMContext):
     # 1. Ma'lumotlarni olish (jami va bugungi)
     all_users = await db.get(User, filters={'talim_turi': 'Kunduzgi'})
     daily_users = await db.get(User, filters={'talim_turi': 'Kunduzgi', 'created_date': today_str})
+    exam_users = await db.get(User, filters={"talim_turi": "Kunduzgi", "status": True})
 
     # 2. Fakultet bo‘yicha statistikalar
     total_faculty = Counter(user.faculty for user in all_users if user.faculty)
     daily_faculty = Counter(user.faculty for user in daily_users if user.faculty)
+    exam_faculty_counter = Counter(user.faculty for user in exam_users if user.faculty)
 
     # 3. Excel hisobotini yaratish
-    await create_report_file(jami_data=total_faculty, kunlik_data=daily_faculty)
+    await create_report_file(jami_data=total_faculty, kunlik_data=daily_faculty, exam_data=exam_faculty_counter)
 
     # 4. Hisobot xabari (jami)
     total_text = "📊 *Fakultetlar bo‘yicha jami ro‘yxatdan o‘tganlar:*\n\n"
@@ -44,9 +46,17 @@ async def hisobot_handler(message: types.Message, state: FSMContext):
     else:
         daily_text += "Bugun hujjat topshirganlar yo‘q."
 
+    exam_info = f"📆 *{formatted_time} kuni imtihon topshirganlar:*\n\n"
+    if exam_faculty_counter:
+        for faculty, count in exam_faculty_counter.items():
+            exam_info += f"• {faculty} — {count} ta\n"
+    else:
+        exam_info += "Bugun hujjat topshirganlar yo‘q."
+
     # 6. Javoblarni yuborish
     await message.answer(total_text, parse_mode="Markdown")
     await message.answer(daily_text, parse_mode="Markdown")
+    await message.answer(exam_info, parse_mode="Markdown")
 
     # 7. Excel faylni yuborish (soat 17:00 dan keyin)
     report_file_name = f"{formatted_time}_hisobot.xlsx"

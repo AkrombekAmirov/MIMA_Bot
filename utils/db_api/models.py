@@ -180,6 +180,21 @@ class UserAnswer(SQLModel, table=True):
     )
 
 
+class Contract(SQLModel, table=True):
+    __tablename__ = 'contracts'
+    id: Optional[int] = Field(default=None, primary_key=True)
+    faculty_name: str = Field(..., description="Fakultet nomi")
+    faculty_number: int = Field(..., description="Fakultet raqami")
+
+
+class Info(SQLModel, table=True):
+    __tablename__ = 'infos'
+    id: Optional[int] = Field(default=None, primary_key=True)
+    passport: str = Field(..., description="Passport raqami")
+    name: str = Field(..., description="User nomi")
+    comment: str = Field(..., description="User kommentari")
+
+
 class Result(SQLModel, table=True):
     __tablename__ = 'results'
     id: Optional[int] = Field(default=None, primary_key=True)

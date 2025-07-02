@@ -1,5 +1,5 @@
+from .models import User, Subject, Result, Question, Faculty, FacultyBlock, UserAnswer, Info, Contract
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
-from .models import User, Subject, Result, Question, Faculty, FacultyBlock, UserAnswer
 from sqlalchemy.exc import DBAPIError, OperationalError, InterfaceError
 from typing import Optional, List, Type, Dict, Any, Callable, Coroutine
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
@@ -96,18 +96,23 @@ class DatabaseService1:
                 raise
 
     async def add(self, instance: SQLModel) -> Optional[int]:
-        """Yangi yozuv qo'shadi."""
+        """Yangi yozuv qo‘shadi. Qo‘l bilan berilgan ID ni bekor qiladi."""
         async with self.session_scope() as session:
             try:
+                if hasattr(instance, "id"):
+                    instance.id = None  # ❗ ID ni o‘chiramiz, auto-increment ishlaydi
+
                 session.add(instance)
                 await session.commit()
                 await session.refresh(instance)
+
                 if self.logging:
-                    self.logging.info(f"Added instance: {instance}")
+                    self.logging.info(f"✅ Added instance (auto-id): {instance}")
                 return instance.id
+
             except Exception as e:
                 if self.logging:
-                    self.logging.error(f"Error adding instance: {e}", exc_info=True)
+                    self.logging.error(f"❌ Error adding instance: {e}", exc_info=True)
                 raise
 
     async def get(self, model: Type[SQLModel], filters: Optional[Dict[str, Any]] = None, limit: Optional[int] = None) -> \
