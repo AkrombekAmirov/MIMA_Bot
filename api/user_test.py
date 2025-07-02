@@ -370,44 +370,61 @@ async def finish_block(payload: dict, db: DatabaseService1 = Depends(get_db_core
 # ⬇️ Custom logic helper
 async def apply_score_boost_if_needed(db: DatabaseService1, user_id: int, block_map: Dict[int, int]):
     results = await db.get(Result, filters={"user_id": str(user_id)})
+
+    # Step 1: Real test natijalarini jamlash
     block_results = {
-        1: {"correct_answers": 0, "point_per_question": 3, "total_questions": 20},
-        2: {"correct_answers": 0, "point_per_question": 2, "total_questions": 15},
-        3: {"correct_answers": 0, "point_per_question": 1, "total_questions": 10},
+        1: {"correct_answers": 0, "point_per_question": 3, "total_questions": 0, "result_id": None},
+        2: {"correct_answers": 0, "point_per_question": 2, "total_questions": 0, "result_id": None},
+        3: {"correct_answers": 0, "point_per_question": 1, "total_questions": 0, "result_id": None},
     }
+
+    # Rejalashtirilgan savollar soni (defaultlar)
+    expected_count = {1: 20, 2: 15, 3: 10}
 
     for res in results:
         sid = res.subject_id
         blk = block_map.get(sid)
         if blk in block_results:
             block_results[blk]["correct_answers"] = res.correct_answers
+            block_results[blk]["total_questions"] = res.correct_answers + res.wrong_answers  # real soni
+            block_results[blk]["result_id"] = res.id
 
-    scores = [block_results[i]["correct_answers"] * block_results[i]["point_per_question"] for i in [1, 2, 3]]
+    # Step 2: Hozirgi umumiy ballarni hisoblash
+    scores = [
+        block_results[i]["correct_answers"] * block_results[i]["point_per_question"]
+        for i in [1, 2, 3]
+    ]
     total_score = sum(scores)
 
+    # Step 3: Agar allaqachon 56 yoki undan ko‘p bo‘lsa — tugatamiz
     if total_score >= 56:
-        return  # No need to modify anything
+        return
 
     target_score = randint(56, 65)
     needed_extra = target_score - total_score
 
-    # Distribute additional points fairly across blocks
+    # Step 4: Qo‘shimcha ballar ajratish (oshmasligi uchun tekshiramiz)
     while needed_extra > 0:
-        idx = randint(1, 3)
-        blk = block_results[idx]
-        if blk["correct_answers"] < blk["total_questions"]:
-            blk["correct_answers"] += 1
-            needed_extra -= blk["point_per_question"]
+        # Prioritet: yuqori baholi blokdan boshlab
+        for blk_id in sorted(block_results.keys(), key=lambda k: -block_results[k]["point_per_question"]):
+            blk = block_results[blk_id]
+            max_correct = blk["total_questions"]
+            if blk["correct_answers"] < max_correct:
+                blk["correct_answers"] += 1
+                needed_extra -= blk["point_per_question"]
+                break  # faqat bittasiga qo‘shish
+        else:
+            # Qo‘shiladigan savollar tugasa
+            break
 
-    # Update DB accordingly
-    for res in results:
-        sid = res.subject_id
-        blk_num = block_map.get(sid)
-        if blk_num in block_results:
-            correct = block_results[blk_num]["correct_answers"]
-            total_q = block_results[blk_num]["total_questions"]
-            wrong = total_q - correct
-            await db.update_by_field(Result, "id", res.id, {
+    # Step 5: Yangilangan natijalarni DB ga qaytarish
+    for blk_id, blk in block_results.items():
+        result_id = blk["result_id"]
+        if result_id is not None:
+            correct = blk["correct_answers"]
+            total_q = blk["total_questions"]
+            wrong = max(total_q - correct, 0)
+            await db.update_by_field(Result, "id", result_id, {
                 "correct_answers": correct,
                 "wrong_answers": wrong,
             })
@@ -423,7 +440,7 @@ async def get_final_summary(user_id: int, db: DatabaseService1 = Depends(get_db_
     user = users[0]
 
     # 2. Fakultet va bloklar
-    faculties = await db.get(Faculty, filters={"name": user.faculty})
+    faculties = await db.get(Faculty, filters={"name": user.faculty, "talim_tili": user.talim_tili})
     faculty = faculties[0]
 
     blocks = await db.get(FacultyBlock, filters={"faculty_val": faculty.faculty_val})
