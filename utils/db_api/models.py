@@ -44,6 +44,8 @@ class User(SQLModel, table=True):
 
     created_date: str
     created_time: str
+    exam_day: str = Field(default="", max_length=10, nullable=True)
+    exam_time: str = Field(default="", max_length=10, nullable=True)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -205,6 +207,7 @@ class Result(SQLModel, table=True):
     correct_answers: int = Field(default=0)
     wrong_answers: int = Field(default=0)
     number: int = Field(default=0)
+    block_number: int = Field(default=0)
     status: bool = Field(default=False)
     created_date: date = Field(default_factory=lambda: datetime.now().date())
     created_time: time = Field(default_factory=lambda: datetime.now().time())
