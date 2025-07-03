@@ -20,7 +20,7 @@ async def hisobot_handler(message: types.Message, state: FSMContext):
     # 1. Ma'lumotlarni olish (jami va bugungi)
     all_users = await db.get(User, filters={'talim_turi': 'Kunduzgi'})
     daily_users = await db.get(User, filters={'talim_turi': 'Kunduzgi', 'created_date': today_str})
-    exam_users = await db.get(User, filters={"talim_turi": "Kunduzgi", "status": True})
+    exam_users = await db.get(User, filters={"talim_turi": "Kunduzgi", "status": True, 'exam_day': today_str})
 
     # 2. Fakultet bo‘yicha statistikalar
     total_faculty = Counter(user.faculty for user in all_users if user.faculty)

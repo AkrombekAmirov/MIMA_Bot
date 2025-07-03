@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let { blocks, total_score, full_name, faculty } = data;
 
     // ✅ Minimal ball — 56 (agar undan past bo‘lsa, ko‘tariladi)
-    if (total_score < 56) total_score = 56;
+    // if (total_score < 56) total_score = 56;
 
     // ✅ Foydalanuvchi ism-familiya va yo‘nalishni chiqarish
     userNameBox.textContent = full_name;
