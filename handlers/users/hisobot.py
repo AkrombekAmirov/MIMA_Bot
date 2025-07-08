@@ -20,14 +20,16 @@ async def hisobot_handler(message: types.Message, state: FSMContext):
     all_users = await db.get(User, filters={'talim_turi': 'Kunduzgi'})
     daily_users = await db.get(User, filters={'talim_turi': 'Kunduzgi', 'created_date': today_str})
     exam_users = await db.get(User, filters={"talim_turi": "Kunduzgi", "status": True, 'exam_day': today_str})
+    exam_all = await db.get(User, filters={"talim_turi": "Kunduzgi", "status": True})
 
     # 2. Fakultet bo‘yicha statistikalar
     total_faculty = Counter(user.faculty for user in all_users if user.faculty)
     daily_faculty = Counter(user.faculty for user in daily_users if user.faculty)
     exam_faculty_counter = Counter(user.faculty for user in exam_users if user.faculty)
+    exam_faculty_all_counter = Counter(user.faculty for user in exam_all if user.faculty)
 
     # 3. Excel hisobotini yaratish
-    await create_report_file(jami_data=total_faculty, kunlik_data=daily_faculty, exam_data=exam_faculty_counter)
+    await create_report_file(jami_data=total_faculty, kunlik_data=daily_faculty, exam_data=exam_faculty_counter, exam_all_data=exam_faculty_all_counter)
 
     # 4. Hisobot xabari (jami)
     total_text = "📊 *Fakultetlar bo‘yicha jami ro‘yxatdan o‘tganlar:*\n\n"

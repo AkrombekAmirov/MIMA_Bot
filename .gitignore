@@ -13,6 +13,8 @@ docker-compose.yml
 Dockerfile
 Backup_DB
 file_service/hisobot
+file_service/report_all
+LoggingService/app.log.1
 
 # Distribution / packaging
 .Python

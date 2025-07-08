@@ -11,16 +11,15 @@ import subprocess
 
 db = DatabaseService1(logger=LoggerService())
 YO_NALISHLAR_QATORLARI = {
-    "Inson resurslarini boshqarish": 4,
-    "Hayot faoliyati xavfsizligi": 5,
-    "Yurisprudensiya": 6,
-    "Ijtimoiy ish": 7,
-    "Menejment": 8,
-    "Mehnat muhofazasi va texnika xavfsizligi": 9,
-    "Psixologiya": 10,
-    "Bugalteriya hisobi": 11,
-    "Metrologiya va standartlashtirish": 12,
-    "Iqtisodiyot": 13
+    "Inson resurslarini boshqarish": 5,
+    "Hayot faoliyati xavfsizligi": 6,
+    "Yurisprudensiya": 7,
+    "Ijtimoiy ish": 8,
+    "Menejment": 9,
+    "Mehnat muhofazasi va texnika xavfsizligi": 10,
+    "Psixologiya": 11,
+    "Bugalteriya hisobi": 12,
+    "Metrologiya va standartlashtirish": 13
 }
 
 
@@ -76,13 +75,14 @@ async def create_report_all_file(rows: list, status: str) -> str:
         raise
 
 
-async def create_report_file(jami_data: dict, kunlik_data: dict, exam_data: dict):
-    path = await get_file_path("report.xlsx")
+async def create_report_file(jami_data: dict, kunlik_data: dict, exam_data: dict, exam_all_data: dict) -> str:
+    path = await get_file_path("report_finaly.xlsx")
     workbook = load_workbook(path)
     sheet = workbook.active
     total_daily = 0
     total_all = 0
     total_exam = 0
+    total_exam_all = 0
     for yo_nalish, row in YO_NALISHLAR_QATORLARI.items():
         # Jami hujjat topshirganlar → E ustun
         jami_val = jami_data.get(yo_nalish, 0)
@@ -99,9 +99,17 @@ async def create_report_file(jami_data: dict, kunlik_data: dict, exam_data: dict
         sheet[f"F{row}"] = exam_val
         total_exam += exam_val
 
+        # Imtihon topshirganlar (barcha) → G ustun
+        exam_all_val = exam_all_data.get(yo_nalish, 0)
+        sheet[f"G{row}"] = exam_all_val
+        total_exam_all += exam_all_val
+
     now = datetime.now()
     formatted_time = now.strftime("%d-%m-%Y")
-    sheet["F2"] = f"{formatted_time} holati bo'yicha"
+    sheet["G2"] = f"{formatted_time} gacha holat bo'yicha"
+    sheet["D4"] = formatted_time
+    sheet["F4"] = formatted_time
+    sheet["H4"] = formatted_time
 
     new_file_name = f"{formatted_time}_hisobot.xlsx"
     new_file_path = await get_report_file_path(new_file_name)
