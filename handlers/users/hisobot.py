@@ -1,22 +1,21 @@
-from file_service import get_report_file_path, create_report_file
-from utils.db_api.core import DatabaseService1, User
+from file_service import get_report_file_path, create_report_file, create_report_all_file
+from utils.db_api.core import DatabaseService1, User, Result, Subject
 from aiogram.dispatcher import FSMContext
-from datetime import datetime, time
 from collections import Counter
-from aiogram import types
-from loader import dp, bot
+from datetime import datetime
 import os, asyncio, logging
-
+from loader import dp, bot
+from aiogram import types
+from json import loads
 
 db = DatabaseService1()
+now = datetime.now()
+today_str = now.strftime("%Y-%m-%d")
+formatted_time = now.strftime("%d-%m-%Y")
 
 
 @dp.message_handler(commands=["hisobot"])
 async def hisobot_handler(message: types.Message, state: FSMContext):
-    now = datetime.now()
-    today_str = now.strftime("%Y-%m-%d")
-    formatted_time = now.strftime("%d-%m-%Y")
-
     # 1. Ma'lumotlarni olish (jami va bugungi)
     all_users = await db.get(User, filters={'talim_turi': 'Kunduzgi'})
     daily_users = await db.get(User, filters={'talim_turi': 'Kunduzgi', 'created_date': today_str})
@@ -71,6 +70,190 @@ async def hisobot_handler(message: types.Message, state: FSMContext):
     else:
         await message.answer("⚠️ Excel hisobot fayli topilmadi.")
 
+
+BLOCK_WEIGHTS = {1: 3, 2: 2, 3: 1}
+BLOCK_TOTAL = {1: 60, 2: 30, 3: 10}
+BLOCK_QUESTION_COUNTS = {1: 20, 2: 15, 3: 10}  # doimiy savollar soni
+
+
+@dp.message_handler(commands=["getreport"])
+async def get_report_handler(message: types.Message, state: FSMContext):
+    try:
+        users = await db.get(User, filters={"status": True})
+        results = await db.get(Result)
+        subjects = await db.get(Subject)
+        subject_map = {str(s.subject_val): s.name for s in subjects}
+        result_map = {(str(r.user_id), r.block_number): r for r in results}
+
+        rows = []
+
+        for user in sorted(users, key=lambda x: x.exam_day or x.created_date):
+            user_id = str(user.id)
+
+            row = {
+                "name": user.name,
+                "faculty": user.faculty,
+                "exam_day": user.exam_day or user.created_date,
+                "total_ball": 0
+            }
+
+            has_result = False  # userda hech bo‘lmasa 1ta blok natija bo‘lishi kerak
+
+            for block in [1, 2, 3]:
+                res = result_map.get((user_id, block))
+                correct = wrong = 0
+                subject_name = ""
+
+                if res:
+                    has_result = True
+                    correct = res.correct_answers
+                    wrong = res.wrong_answers
+                    subject_name = subject_map.get(str(res.subject_id), "Noma'lum fan")
+
+                block_weight = BLOCK_WEIGHTS.get(block, 1)
+                total_questions = BLOCK_QUESTION_COUNTS.get(block, 0)
+                block_total_ball = BLOCK_TOTAL.get(block, 0)
+
+                ball = correct * block_weight
+                accuracy = round((correct / total_questions * 100), 1) if total_questions > 0 else 0
+
+                row[f"block_{block}_jami_ball"] = block_total_ball
+                row[f"block_{block}_ball"] = ball
+                row[f"block_{block}_total_questions"] = total_questions
+                row[f"block_{block}_correct"] = correct
+                row[f"block_{block}_wrong"] = wrong
+                row[f"block_{block}_accuracy"] = f"{accuracy}%"
+                row[f"block_{block}_subject"] = subject_name
+
+                row["total_ball"] += ball
+
+            if has_result:
+                rows.append(row)
+            else:
+                print(f"⚠️ Foydalanuvchida natijalar yo'q: {user.name} (ID: {user_id})")
+
+        if rows:
+            file_path = await create_report_all_file(rows, 'all')
+            await message.answer_document(open(file_path, "rb"), caption="📊 Hisobot fayli tayyor.")
+        else:
+            await message.answer("⚠️ Hech qanday natija topilmadi.")
+    except Exception as e:
+        print(f"❌ get_report_handler xatolik: {e}")
+        await message.answer("Hisobotni yaratishda xatolik yuz berdi.")
+
+
+@dp.message_handler(commands=["getreport_today"])
+async def get_report_today_handler(message: types.Message, state: FSMContext):
+    try:
+        users = await db.get(User, filters={"status": True})
+        results = await db.get(Result)
+        subjects = await db.get(Subject)
+
+        subject_map = {str(s.subject_val): s.name for s in subjects}
+        result_map = {(str(r.user_id), r.block_number): r for r in results}
+
+        rows = []
+
+        for user in sorted(users, key=lambda x: x.exam_day or x.created_date):
+            exam_date = user.exam_day
+            if exam_date != today_str:
+                continue  # faqat bugungi imtihonlar
+
+            user_id = str(user.id)
+            row = {
+                "name": user.name,
+                "faculty": user.faculty,
+                "exam_day": exam_date,
+                "total_ball": 0
+            }
+
+            has_result = False
+
+            for block in [1, 2, 3]:
+                res = result_map.get((user_id, block))
+                correct = wrong = 0
+                subject_name = ""
+
+                if res:
+                    has_result = True
+                    correct = res.correct_answers
+                    wrong = res.wrong_answers
+                    subject_name = subject_map.get(str(res.subject_id), "Noma'lum fan")
+
+                block_weight = BLOCK_WEIGHTS.get(block, 1)
+                total_questions = BLOCK_QUESTION_COUNTS.get(block, 0)
+                block_total_ball = BLOCK_TOTAL.get(block, 0)
+
+                ball = correct * block_weight
+                accuracy = round((correct / total_questions * 100), 1) if total_questions > 0 else 0
+
+                row[f"block_{block}_jami_ball"] = block_total_ball
+                row[f"block_{block}_ball"] = ball
+                row[f"block_{block}_total_questions"] = total_questions
+                row[f"block_{block}_correct"] = correct
+                row[f"block_{block}_wrong"] = wrong
+                row[f"block_{block}_accuracy"] = f"{accuracy}%"
+                row[f"block_{block}_subject"] = subject_name
+
+                row["total_ball"] += ball
+
+            if has_result:
+                rows.append(row)
+
+        if rows:
+            file_path = await create_report_all_file(rows, 'daily')
+            await message.answer_document(open(file_path, "rb"), caption="📊 Bugungi imtihon natijalari tayyor.")
+        else:
+            await message.answer("📭 Bugungi kunda hech kim imtihon topshirmagan.")
+
+    except Exception as e:
+        print(f"❌ get_report_today_handler xatolik: {e}")
+        await message.answer("Hisobotni yaratishda xatolik yuz berdi.")
+
+
+# +998334280898
+
+
+@dp.message_handler(commands=["getreport"])
+async def get_report_handler(message: types.Message, state: FSMContext):
+    users = await db.get(User, filters={"status": True})
+    results = await db.get(Result)
+    subjects = await db.get(Subject)
+
+    subject_map = {s.id: s.name for s in subjects}
+    result_map = {(r.user_id, r.block_number): r for r in results}
+
+    rows = []
+    for user in sorted(users, key=lambda x: x.exam_day or x.created_date):
+        row = {
+            "name": user.name,
+            "passport": user.passport,
+            "telegram_id": user.telegram_id,
+            "faculty": user.faculty,
+            "exam_day": user.exam_day or user.created_date,
+            "total_ball": 0
+        }
+        for block in [1, 2, 3]:
+            res = result_map.get((str(user.id), block))
+            total = correct = 0
+            subject_name = ""
+
+            if res:
+                total = len(loads(res.question_ids)) if res.question_ids else 0
+                correct = res.correct_answers
+                subject_name = subject_map.get(res.subject_id, "")
+
+            ball = correct * BLOCK_WEIGHTS[block]
+            accuracy = round((correct / total * 100), 1) if total > 0 else 0
+            row[f"block_{block}_total"] = total
+            row[f"block_{block}_correct"] = correct
+            row[f"block_{block}_accuracy"] = accuracy
+            row[f"block_{block}_subject"] = subject_name
+            row["total_ball"] += ball
+
+        rows.append(row)
+
+
 DEFAULT_BROADCAST_TEXT = (
     "Assalomu alaykum hurmatli abituriyent!\n\n"
     "Mehnat va ijtimoiy munosabatlar akademiyasini tanlaganingiz uchun rahmat!\n\n"
@@ -79,6 +262,7 @@ DEFAULT_BROADCAST_TEXT = (
     "🕘 Imtihonlar har kuni dushanbadan jumagacha, soat 09:00 dan 16:00 gacha "
     "Akademiya o‘quv binosida bo‘lib o‘tadi."
 )
+
 
 # ✅ Asinxron mass-messaging funksiyasi
 async def send_message_to_users(users: list[User], text: str):
@@ -97,6 +281,7 @@ async def send_message_to_users(users: list[User], text: str):
     # Parallel yuborish
     await asyncio.gather(*(send_one(user) for user in users))
     return success, failed
+
 
 # ✅ Admin tomonidan yuboriladigan buyruq
 @dp.message_handler(commands=["sendmessage"])

@@ -1,4 +1,5 @@
-from file_service.test_file.test_file_path import get_test_file_path, join_test_file
+from file_service.test_file.test_file_path import get_test_file_path
+from file_service.report_all import get_report_file_all_path
 from utils.db_api.core import DatabaseService1, Question
 from file_service.hisobot import get_report_file_path
 from file_service.file_path import get_file_path
@@ -21,6 +22,58 @@ YO_NALISHLAR_QATORLARI = {
     "Metrologiya va standartlashtirish": 12,
     "Iqtisodiyot": 13
 }
+
+
+
+async def create_report_all_file(rows: list, status: str) -> str:
+    """
+    Abituriyentlar test natijalarini Excel faylga aniq va siljimasdan yozish funksiyasi.
+    :param rows: get_report_handler orqali kelgan natijaviy ro'yxat
+    :return: Excel faylning saqlangan to‘liq yo‘li
+    """
+    try:
+        file_name = ""
+        # 1. Shablonni ochamiz
+        template_path = await get_file_path("report_all.xlsx")
+        workbook = load_workbook(template_path)
+        sheet = workbook.active
+        now = datetime.now()
+        formatted_time = now.strftime("%d-%m-%Y")
+        if status == "all":
+            file_name = now.strftime("%d-%m-%Y") + "_hisobot.xlsx"
+            sheet["T2"] = f"{formatted_time} Holatiga imtihon toshirgan abituriyentlar natijalari"
+        elif status == "daily":
+            file_name = now.strftime("%d-%m-%Y") + "_kunlik_hisobot.xlsx"
+            sheet["T2"] = f"{formatted_time} kunlik imtihon toshirgan abituriyentlar natijalari"
+        start_row = 5  # Ma'lumotlar yozilishi kerak bo‘lgan qatordan boshlaymiz (MERGE bilan to‘qnashmaydi)
+
+        for i, row in enumerate(rows):
+            row_index = start_row + i
+
+            sheet.cell(row=row_index, column=1, value=i + 1)
+
+            # A–D ustunlar
+            sheet.cell(row=row_index, column=2, value=row["exam_day"])        # A
+            sheet.cell(row=row_index, column=3, value=row["name"])            # B
+            sheet.cell(row=row_index, column=4, value=row["faculty"])         # C
+            sheet.cell(row=row_index, column=5, value=row["total_ball"])      # D
+
+            for block in [1, 2, 3]:
+                base_col = 6 + (block - 1) * 7  # E=5, L=12, S=19
+                sheet.cell(row=row_index, column=base_col + 0, value=row[f"block_{block}_jami_ball"])
+                sheet.cell(row=row_index, column=base_col + 1, value=row[f"block_{block}_ball"])
+                sheet.cell(row=row_index, column=base_col + 2, value=row[f"block_{block}_total_questions"])
+                sheet.cell(row=row_index, column=base_col + 3, value=row[f"block_{block}_correct"])
+                sheet.cell(row=row_index, column=base_col + 4, value=row[f"block_{block}_wrong"])
+                sheet.cell(row=row_index, column=base_col + 5, value=row[f"block_{block}_accuracy"])
+                sheet.cell(row=row_index, column=base_col + 6, value=row[f"block_{block}_subject"])
+        save_path = await get_report_file_all_path(file_name)
+        workbook.save(save_path)
+        workbook.close()
+        return save_path
+    except Exception as e:
+        print(f"❌ Excel faylga yozishda xatolik: {e}")
+        raise
 
 
 async def create_report_file(jami_data: dict, kunlik_data: dict, exam_data: dict):
@@ -74,9 +127,7 @@ async def convert_pdf(source_path, target_path):
 
 async def write_qabul(row: list):
     try:
-        print(row)
         path = await get_file_path("qabul.xlsx")
-        print(path)
         workbook = load_workbook(path)
         sheet = workbook.active
         sheet.append(row)  # to'g'ridan-to'g'ri ro'yxat yoziladi
