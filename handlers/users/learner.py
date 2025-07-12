@@ -21,6 +21,17 @@ from keyboards.inline import (
     choose_education_status, choose_language
 )
 
+# Fayl junatishni bloklash uchun handler
+dp.message_handler(content_types=[types.ContentType.DOCUMENT,
+                               types.ContentType.PHOTO,
+                               types.ContentType.VIDEO,
+                               types.ContentType.AUDIO,
+                               types.ContentType.VOICE,
+                               types.ContentType.VIDEO_NOTE])
+async def block_file_upload(message: types.Message):
+    await message.answer("❌ Fayl yuborish imkoniyati o'chirilgan.\nBotga fayl yuborish mumkin emas.\nIltimos, /start buyruqini yuboring.")
+    return False  # Handler chain'ni to'xtatish uchun
+
 # Logging config
 logging.basicConfig(
     filename='bot.log',
@@ -58,7 +69,17 @@ class BotHandler:
         await message.answer("Xizmat turini tanlang:", reply_markup=choose_visitor)
 
     @staticmethod
-    @dp.message_handler(content_types=types.ContentType.CONTACT)
+    @dp.message_handler(content_types=types.ContentType.ANY)
+    @handle_errors
+    async def block_file_upload(message: types.Message):
+        if message.content_type in [types.ContentType.DOCUMENT, types.ContentType.PHOTO, types.ContentType.VIDEO, types.ContentType.AUDIO, types.ContentType.VOICE, types.ContentType.VIDEO_NOTE]:
+            await message.answer("❌ Fayl yuborish imkoniyati o'chirilgan.\nBotga fayl yuborish mumkin emas.\n Iltimos, /start buyruqini yuboring.")
+            return
+        # Agar bu boshqa content_type bo'lsa, xabarni qabul qilish
+        await message.answer("Xatolik: Fayl yuhorish imkoniyati o'chirilgan")
+
+    @staticmethod
+    @dp.message_handler(content_types=[types.ContentType.CONTACT, types.ContentType.TEXT])
     @handle_errors
     async def process_contact(message: types.Message, state: FSMContext):
         if message.content_type != types.ContentType.CONTACT:
