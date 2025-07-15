@@ -4,7 +4,7 @@ from utils.db_api.core import DatabaseService1, Question
 from file_service.hisobot import get_report_file_path
 from file_service.file_path import get_file_path
 from LoggingService import LoggerService
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 from datetime import datetime
 from os.path import dirname
 import subprocess
@@ -21,6 +21,49 @@ YO_NALISHLAR_QATORLARI = {
     "Bugalteriya hisobi": 12,
     "Metrologiya va standartlashtirish": 13
 }
+
+async def create_report_by_faculty_files(rows: list) -> list[str]:
+    file_paths = []
+    faculties = set(row["faculty"] for row in rows)
+    now = datetime.now()
+    formatted_time = now.strftime("%d-%m-%Y")
+
+    for faculty in faculties:
+        faculty_rows = [row for row in rows if row["faculty"] == faculty]
+        if not faculty_rows:
+            continue
+
+        template_path = await get_file_path("report_all.xlsx")
+        workbook = load_workbook(template_path)
+        sheet = workbook.active
+        sheet["T2"] = f"{formatted_time} holatiga {faculty} yo‘nalishidagi abituriyentlar natijalari"
+
+        start_row = 5
+        for i, row in enumerate(faculty_rows):
+            row_index = start_row + i
+            sheet.cell(row=row_index, column=1, value=i + 1)
+            sheet.cell(row=row_index, column=2, value=row["exam_day"])
+            sheet.cell(row=row_index, column=3, value=row["name"])
+            sheet.cell(row=row_index, column=4, value=row["faculty"])
+            sheet.cell(row=row_index, column=5, value=row["total_ball"])
+
+            for block in [1, 2, 3]:
+                base_col = 6 + (block - 1) * 7
+                sheet.cell(row=row_index, column=base_col + 0, value=row[f"block_{block}_jami_ball"])
+                sheet.cell(row=row_index, column=base_col + 1, value=row[f"block_{block}_ball"])
+                sheet.cell(row=row_index, column=base_col + 2, value=row[f"block_{block}_total_questions"])
+                sheet.cell(row=row_index, column=base_col + 3, value=row[f"block_{block}_correct"])
+                sheet.cell(row=row_index, column=base_col + 4, value=row[f"block_{block}_wrong"])
+                sheet.cell(row=row_index, column=base_col + 5, value=row[f"block_{block}_accuracy"])
+                sheet.cell(row=row_index, column=base_col + 6, value=row[f"block_{block}_subject"])
+
+        file_name = f"{faculty.replace(' ', '_')}_{formatted_time}.xlsx"
+        save_path = await get_report_file_all_path(file_name)
+        workbook.save(save_path)
+        workbook.close()
+        file_paths.append(save_path)
+
+    return file_paths
 
 
 

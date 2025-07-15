@@ -1,4 +1,4 @@
-from file_service import get_report_file_path, create_report_file, create_report_all_file
+from file_service import get_report_file_path, create_report_file, create_report_all_file, create_report_by_faculty_files
 from utils.db_api.core import DatabaseService1, User, Result, Subject
 from aiogram.dispatcher import FSMContext
 from collections import Counter
@@ -136,6 +136,9 @@ async def get_report_handler(message: types.Message, state: FSMContext):
 
         if rows:
             file_path = await create_report_all_file(rows, 'all')
+            # report_files = await create_report_by_faculty_files(rows)
+            # for file in report_files:
+            #     await message.answer_document(open(file, "rb"), caption="📘 Fakultet bo‘yicha hisobot")
             await message.answer_document(open(file_path, "rb"), caption="📊 Hisobot fayli tayyor.")
         else:
             await message.answer("⚠️ Hech qanday natija topilmadi.")
@@ -279,6 +282,7 @@ async def send_message_to_users(users: list[User], text: str):
         except Exception as e:
             logging.warning(f"⚠️ {user.telegram_id} raqamiga yuborishda xatolik: {e}")
             failed += 1
+            print(f"⚠️ user_id:{user.telegram_id}, telefon raqami: {user.telegram_number}, F.I.Sh:{user.name} xatolik: {e}\n")
 
     # Parallel yuborish
     await asyncio.gather(*(send_one(user) for user in users))
