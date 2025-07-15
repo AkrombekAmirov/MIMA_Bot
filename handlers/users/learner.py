@@ -23,14 +23,18 @@ from keyboards.inline import (
 
 # Fayl junatishni bloklash uchun handler
 dp.message_handler(content_types=[types.ContentType.DOCUMENT,
-                               types.ContentType.PHOTO,
-                               types.ContentType.VIDEO,
-                               types.ContentType.AUDIO,
-                               types.ContentType.VOICE,
-                               types.ContentType.VIDEO_NOTE])
+                                  types.ContentType.PHOTO,
+                                  types.ContentType.VIDEO,
+                                  types.ContentType.AUDIO,
+                                  types.ContentType.VOICE,
+                                  types.ContentType.VIDEO_NOTE])
+
+
 async def block_file_upload(message: types.Message):
-    await message.answer("❌ Fayl yuborish imkoniyati o'chirilgan.\nBotga fayl yuborish mumkin emas.\nIltimos, /start buyruqini yuboring.")
+    await message.answer(
+        "❌ Fayl yuborish imkoniyati o'chirilgan.\nBotga fayl yuborish mumkin emas.\nIltimos, /start buyruqini yuboring.")
     return False  # Handler chain'ni to'xtatish uchun
+
 
 # Logging config
 logging.basicConfig(
@@ -69,16 +73,6 @@ class BotHandler:
         await message.answer("Xizmat turini tanlang:", reply_markup=choose_visitor)
 
     @staticmethod
-    @dp.message_handler(content_types=types.ContentType.ANY)
-    @handle_errors
-    async def block_file_upload(message: types.Message):
-        if message.content_type in [types.ContentType.DOCUMENT, types.ContentType.PHOTO, types.ContentType.VIDEO, types.ContentType.AUDIO, types.ContentType.VOICE, types.ContentType.VIDEO_NOTE]:
-            await message.answer("❌ Fayl yuborish imkoniyati o'chirilgan.\nBotga fayl yuborish mumkin emas.\n Iltimos, /start buyruqini yuboring.")
-            return
-        # Agar bu boshqa content_type bo'lsa, xabarni qabul qilish
-        await message.answer("Xatolik: Fayl yuhorish imkoniyati o'chirilgan")
-
-    @staticmethod
     @dp.message_handler(content_types=[types.ContentType.CONTACT, types.ContentType.TEXT])
     @handle_errors
     async def process_contact(message: types.Message, state: FSMContext):
@@ -98,7 +92,7 @@ class BotHandler:
                 status=False,
                 test_point='1'
             )
-            ) # Sevimli , Mening yurtim,
+            )  # Sevimli , Mening yurtim,
             await state.update_data({"telegram_number": contact.phone_number})
             await message.answer("Xizmat turini tanlang:", reply_markup=choose_visitor)
         else:
@@ -188,7 +182,8 @@ class BotHandler:
             await Learning.minus.set()
             return
         if message.text.strip() == "+998901234567":
-            await message.answer(f"❌ O'zingizga tegishli bo'lmagan telefon raqam kiritdingiz! Iltimos ozingizga tegishli telefon raqamni kiriting.",)
+            await message.answer(
+                f"❌ O'zingizga tegishli bo'lmagan telefon raqam kiritdingiz! Iltimos ozingizga tegishli telefon raqamni kiriting.", )
             await Learning.minus.set()
             return
         await state.update_data({"phone_numbers": message.text})
@@ -324,4 +319,5 @@ class BotHandler:
             await call.message.answer("✅ Ma’lumotlar saqlandi! \n", reply_markup=choose_visitor)
         else:
             await state.reset_state(with_data=True)
-            await call.message.answer("❌ Ma'lumotlar bekor qilindi.\nQaytadan urinib ko'ring", reply_markup=choose_visitor)
+            await call.message.answer("❌ Ma'lumotlar bekor qilindi.\nQaytadan urinib ko'ring",
+                                      reply_markup=choose_visitor)

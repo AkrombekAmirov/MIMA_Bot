@@ -473,6 +473,12 @@ async def apply_score_boost_if_needed(db: DatabaseService1, user_id: int, block_
                 "correct_answers": correct,
                 "wrong_answers": wrong,
             })
+            accuracy = round(min(100, correct / total_q * 100), 2) if total_q > 0 else 0
+            logger.info(
+                f"✅ Blok yakunlandi | user_id={user_id}, subject_id={res.subject_id}, "
+                f"correct={correct}, wrong={wrong}, accuracy={accuracy}%"
+            )
+
 
 
 @router.get("/final-summary")
