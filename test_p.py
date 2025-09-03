@@ -1,3 +1,80 @@
+import logging
+from aiogram import Bot, Dispatcher, types, executor
+import qrcode
+from io import BytesIO
+import re
+
+API_TOKEN = '7135661362:AAEn720harwQ9Z3x7EjalUxGeMv5YnlsmkQ'  # <<< BOT TOKENINGIZNI SHU YERGA QO'YING
+
+# Logging
+logging.basicConfig(level=logging.INFO)
+
+# Bot va Dispatcher
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
+
+# Link formatini tekshiruvchi regex
+URL_REGEX = re.compile(r'^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$', re.IGNORECASE)
+
+
+# ===================== Fayllarni bloklash =====================
+@dp.message_handler(content_types=[
+    types.ContentType.PHOTO,
+    types.ContentType.DOCUMENT,
+    types.ContentType.VIDEO,
+    types.ContentType.AUDIO,
+    types.ContentType.VOICE,
+    types.ContentType.STICKER,
+    types.ContentType.CONTACT,
+    types.ContentType.LOCATION,
+    types.ContentType.ANIMATION,
+])
+async def block_unexpected_files(message: types.Message):
+    readable_type = {
+        types.ContentType.PHOTO: "📷 rasm",
+        types.ContentType.DOCUMENT: "📄 hujjat",
+        types.ContentType.VIDEO: "🎥 video",
+        types.ContentType.AUDIO: "🎵 audio",
+        types.ContentType.VOICE: "🎙 ovozli xabar",
+        types.ContentType.STICKER: "🔖 sticker",
+        types.ContentType.CONTACT: "👤 kontakt",
+        types.ContentType.LOCATION: "📍 joylashuv",
+        types.ContentType.ANIMATION: "📹 gif"
+    }.get(message.content_type, "❓ noma’lum fayl")
+
+    await message.answer(
+        f"Xurmatli {message.from_user.full_name}, siz ruxsat etilmagan ma'lumot yubordingiz: {readable_type}.\n"
+        "Iltimos, faqat link yuboring (masalan: https://example.com)."
+    )
+
+
+# ===================== QR-Code generator =====================
+@dp.message_handler(lambda msg: msg.text and re.match(URL_REGEX, msg.text))
+async def qr_generate(message: types.Message):
+    url = message.text.strip()
+
+    # QR code yaratish
+    img = qrcode.make(url)
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    buffer.seek(0)
+
+    await message.answer_photo(photo=buffer, caption=f"🔗 Siz yuborgan havola:\n{url}")
+    buffer.close()
+
+
+# ===================== Boshqa matnlar =====================
+@dp.message_handler()
+async def handle_invalid_text(message: types.Message):
+    await message.answer("❗ Iltimos, faqat to‘g‘ri link yuboring. Masalan:\nhttps://example.com")
+
+
+# ===================== Botni ishga tushirish =====================
+if __name__ == '__main__':
+    executor.start_polling(dp, skip_updates=True)
+
+
+'''
 import asyncio
 from utils import DatabaseService1
 from utils.db_api.models import Question, Subject
@@ -471,7 +548,7 @@ async def seed_math_questions():
 
 if __name__ == "__main__":
     asyncio.run(seed_math_questions())
-'''
+
 import asyncio
 from utils import DatabaseService1
 from utils.db_api.models import Question, Subject
