@@ -1,4 +1,4 @@
-from file_service import get_report_file_path, create_report_file, create_report_all_file, create_report_by_faculty_files
+from file_service import get_hisobot_file_all_path, create_report_file, create_report_all_file, create_report_by_faculty_files
 from utils.db_api.core import DatabaseService1, User, Result, Subject
 from aiogram.dispatcher import FSMContext
 from collections import Counter
@@ -61,7 +61,7 @@ async def hisobot_handler(message: types.Message, state: FSMContext):
 
     # 7. Excel faylni yuborish (soat 17:00 dan keyin)
     report_file_name = f"{formatted_time}_hisobot.xlsx"
-    report_file_path = await get_report_file_path(report_file_name)
+    report_file_path = await get_hisobot_file_all_path(report_file_name)
 
     if report_file_path and os.path.exists(report_file_path):
         await message.answer_document(

@@ -1,7 +1,7 @@
 from file_service.test_file.test_file_path import get_test_file_path
 from file_service.report_all import get_report_file_all_path
 from utils.db_api.core import DatabaseService1, Question
-from file_service.hisobot import get_report_file_path
+from file_service.hisobot import get_hisobot_file_all_path as get_report_file_path
 from file_service.file_path import get_file_path
 from LoggingService import LoggerService
 from openpyxl import load_workbook, Workbook
